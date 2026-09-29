@@ -4,6 +4,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.64.81] - 2026-09-29
+### Thêm mới
+- **Gõ `/` trong khung chat giờ có 12 lệnh hệ thống**, chạy giống nhau ở mọi bộ não. `/status` cho biết đang dùng model nào, `/model` đổi model, `/usage` xem token đã dùng, `/tasks` xem việc nền, `/memory` xem bộ nhớ, `/export` tải hội thoại về, cùng `/help`, `/brain`, `/retry`.
+- **`/compact` nén hội thoại dài ngay**, không đợi ngưỡng tự động. **`/plan việc-cần-làm`** cho Javis chỉ lập kế hoạch, chưa làm gì ra ngoài.
+- **`/goal mục-tiêu`: Javis tự làm tiếp từng vòng cho tới khi đạt** (tối đa 8 vòng). Bạn gõ tin mới hoặc bấm Dừng là dừng.
+- **Telegram có thêm `/usage`, `/tasks`, `/memory` và `/plan`.**
+
 ## [0.64.80] - 2026-09-29
 ### Thêm mới
 - **Bot tự trả lời trên Zalo cá nhân.** Nối Zalo ở trang Kết nối, rồi bấm Tạo bot trực (hoặc Bot mới và chọn kênh Zalo cá nhân). Bot tự quyết có nên trả lời hay không, chuyện riêng tư hay tin không cần hồi đáp thì nó im. Không cần bật công tắc từng người.
