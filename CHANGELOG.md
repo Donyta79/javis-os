@@ -4,6 +4,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.64.83] - 2026-09-29
+### Cải thiện
+- **Form bot gọn hơn: bỏ ô "Chat ID người trực nhận chuyển tiếp"** (đó là số Telegram, không dùng được cho bot Zalo). Bot đã đặt người trực từ trước vẫn chạy như cũ.
+- **Mục "Cài đặt thêm" ghi rõ bên trong có gì (ngôn ngữ, nhóm) và tự mở ra khi bot có kênh vào được nhóm**, để thấy ngay chế độ Tự đánh giá.
+### Sửa lỗi
+- **Cảnh báo mức Toàn quyền của bot nói đúng hơn.** Trước đây ghi "rào duy nhất còn lại là file Agent", nhưng mức quyền của từng kết nối ở trang Kết nối vẫn chặn bot ở mọi mức.
+
 ## [0.64.82] - 2026-09-29
 ### Thêm mới
 - **Bot trả lời được trong nhóm Zalo.** Nhóm đã cho phép: tag tên bot hoặc trả lời vào tin của bot là bot trả lời. Trước đây mọi tin nhóm đều bị bỏ qua nên tag cũng im.
