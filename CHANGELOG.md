@@ -4,6 +4,15 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.65.0] - 2026-09-30
+### Thêm mới
+- **Bộ phán xử cho bot trong nhóm.** Bot tự quyết nói hay im theo ngữ cảnh: đọc vài tin gần nhất, hiểu tin nối tiếp, và mỗi bot theo vai Agent của riêng nó. Mọi quyết định đều được ghi lại, kể cả lúc bot im (menu "…" của thẻ bot, mục Bộ phán xử). Bật trong form bot khi chọn Tự đánh giá; có chế độ Chạy thử để so sánh với luật cũ trước.
+- **Bot tự học từ phản ứng trong nhóm** (tắt sẵn, bật riêng từng bot): bị hỏi lại thì lần sau bot nói, bị nhắc "đừng chen vào" thì bớt nói. Chỉ đổi việc nói hay im, chỉ lời của chủ mới thành luật, và có nút Quên hết.
+### Sửa lỗi
+- **Gọi tên trơn cũng là gọi bot**, không cần @ ("nhi mai ơi"). Trước đây bot im mà không để lại dấu vết nào.
+### Cải thiện
+- **Hội thoại của bot với khách chuyển sang lịch sử của Agent** (trang Cộng sự, có nhãn Bot), không còn nằm ở lịch sử Trò chuyện.
+
 ## [0.64.86] - 2026-09-30
 ### Sửa lỗi
 - **Trang Cộng sự không còn hiện mã kiểu `ws.tab_agent`, `sess.new_chat` thay cho tên nút** khi mở lại Javis sau khi cập nhật. Nhãn giờ tự chuyển thành chữ ngay khi bộ chữ tải xong.
