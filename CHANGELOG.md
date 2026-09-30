@@ -4,6 +4,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.65.1] - 2026-09-30
+### Cải thiện
+- **Bộ phán xử tự vận hành, bỏ hết ô cài đặt.** Chọn Tự đánh giá là xong. Máy tự chọn mức hăng hái cho từng nhóm, tự học từ phản ứng của nhóm, tự soạn vai từ Agent của bot. Bạn chỉ chỉnh bằng nút Đúng/Sai ở menu Bộ phán xử.
+- **Luật lên tiếng viết tay ở bản trước** được gộp vào Bài học của bot. Muốn bot nhận thêm một tên thì gọi bot rồi dạy trong nhóm.
+- **Hội thoại trong nhóm mang tên nhóm** ở lịch sử của Agent, không còn là tin đầu của người nhắn đầu tiên. Phiên cũ đổi tên khi nhóm nhắn lại.
+- **Lưu ý:** bot đang ở Tự đánh giá dùng bộ phán xử ngay khi cập nhật, và ghi lại chữ chat của nhóm (tối đa 400 ký tự mỗi tin, giữ 14 ngày) để học. Nút Quên hết xoá sạch.
+
 ## [0.65.0] - 2026-09-30
 ### Thêm mới
 - **Bộ phán xử cho bot trong nhóm.** Bot tự quyết nói hay im theo ngữ cảnh: đọc vài tin gần nhất, hiểu tin nối tiếp, và mỗi bot theo vai Agent của riêng nó. Mọi quyết định đều được ghi lại, kể cả lúc bot im (menu "…" của thẻ bot, mục Bộ phán xử). Bật trong form bot khi chọn Tự đánh giá; có chế độ Chạy thử để so sánh với luật cũ trước.
