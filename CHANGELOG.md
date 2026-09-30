@@ -4,6 +4,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.65.6] - 2026-09-30
+### Thêm mới
+- **Javis tag đúng người trong nhóm Zalo.** Chỉ cần nói tên (kiểu "@minhquy"), Javis tự tìm ID Zalo thật. Trùng tên hoặc không thấy thì hỏi lại chứ không đoán, vì tag nhầm không rút lại được.
+- **Tạo ghi chú nhóm, nhắc hẹn và poll trên Zalo** ngay từ chat, cho mọi bộ não. Nhắc hẹn hiện trong Zalo nên cả nhóm cùng thấy.
+### Sửa lỗi
+- Gửi ảnh Zalo không còn báo "đã gửi" khi Zalo từ chối.
+
 ## [0.65.5] - 2026-09-30
 ### Thêm mới
 - **Hòm thư: nút "Trả lời giúp tin này".** Bot trả lời ngay tin khách cuối bằng đúng Agent của nó, dù lúc nãy bộ phán xử đã chọn im. Cuộc chat vẫn ở Tự động, và bot học thêm một ca để lần sau tự nói.
