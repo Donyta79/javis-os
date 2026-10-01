@@ -4,6 +4,12 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.65.18] - 2026-10-01
+### Cải thiện
+- **Bấm mic là gọi Javis.** Nút mic thành nút Cúp máy màu đỏ, và một thanh gọi hiện trên khung chat: đang nghe, Javis đang nói hay đang làm việc, kèm đồng hồ, nút Tắt mic và Cúp máy. Esc cũng cúp máy.
+- Javis tự chọn đường gọi: ChatGPT Live khi đã nối gói ChatGPT, rồi Live qua API key, không thì đường Cơ bản. ChatGPT Live mở không được thì cuộc gọi tự chuyển sang Cơ bản thay vì tắt.
+- Phím Space không còn mở mic, để không ai lỡ chạm mà bật nghe.
+
 ## [0.65.17] - 2026-10-01
 ### Thêm mới
 - **ChatGPT Live: nói chuyện với Javis qua gói ChatGPT, không cần API key.** Vào Cài đặt → Giọng nói, chọn Live rồi ChatGPT Live. Nói liền mạch, Javis đáp chưa tới một giây, chen ngang lúc nào cũng được.
