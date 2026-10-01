@@ -4,6 +4,14 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.65.25] - 2026-10-02
+### Sửa lỗi
+- **Giữa cuộc gọi ChatGPT Live, Javis không còn tự đổi giọng.** Trước đây lúc nối lại sau khi tạm ngắt mà hỏng, Javis lặng lẽ chuyển sang đường Cơ bản đọc bằng giọng khác (nữ thành nam). Nay Javis giữ ChatGPT Live: thử lại một lần, vẫn hỏng thì báo một dòng và chờ, bạn nói lại là thử tiếp.
+- Nối lại trên iPhone không còn có thể treo ở bước bật âm thanh.
+
+### Thêm mới
+- **Trả lại ô chọn bộ não trả lời nhanh** ở Cài đặt, Giọng nói, Nâng cao: Tự động, Bộ não chính, hoặc một bộ não cụ thể. Ô này chỉ dùng ở đường Cơ bản; gọi bằng ChatGPT Live thì ChatGPT tự nghe và trả lời.
+
 ## [0.65.24] - 2026-10-02
 ### Cải thiện
 - **Javis nối lại nhanh hơn sau lúc tạm ngắt.** Nghe được mấy chữ đầu là Javis bắt đầu nối lại ngay trong lúc bạn còn đang nói, và chốt câu sau 0,7 giây im thay vì 1,2 giây. Đo trên máy thử: từ lúc ngừng nói tới lúc nghe Javis giảm từ khoảng 5 giây xuống khoảng 2 giây.
