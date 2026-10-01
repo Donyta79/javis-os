@@ -4,6 +4,10 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.65.23] - 2026-10-01
+### Sửa lỗi
+- **ChatGPT Live đọc các câu trả lời lần lượt.** Khi kết quả thứ hai về lúc Javis còn đang đọc kết quả thứ nhất, hai câu từng bị đọc trộn vào nhau như hai giọng chồng lên nhau. Nay Javis đọc xong câu đang nói rồi mới đọc câu tiếp theo.
+
 ## [0.65.22] - 2026-10-01
 ### Cải thiện
 - **Im lâu thì tạm ngắt, nói là Javis tự nối lại.** Trong cuộc gọi ChatGPT Live, im 30 giây (trước là 20) thì tạm ngắt cho đỡ tốn hạn mức; cứ nói tiếp là Javis nối lại và trả lời luôn câu đó. Không cần gọi "Javis" nữa, nên hết cảnh gọi mãi không nối lại vì máy nghe thành "David".
