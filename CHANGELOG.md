@@ -4,6 +4,10 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.65.28] - 2026-10-02
+### Sửa lỗi
+- **Đang gọi, nói chen không còn làm Javis dừng câu trả lời.** Trước đây ở đường Cơ bản, nói thêm một câu lúc Javis đang trả lời là hiện "Đã dừng lượt này" và câu trả lời bị cắt, nói nhiều thì bị cắt liên tục. Nay câu trả lời luôn được viết trọn; câu bạn nói thêm được giữ lại và Javis trả lời ngay sau khi đọc xong. Cắt lời hay nói "thôi" chỉ làm Javis thôi đọc. Cuộc gọi chỉ dừng khi bạn cúp máy.
+
 ## [0.65.27] - 2026-10-02
 ### Sửa lỗi
 - **Nút Cập nhật ngay trên Docker/VPS không còn kẹt "Đang cập nhật rồi, chờ chút".** Bấm ngay sau khi có bản mới thì image Docker có thể chưa đóng gói xong (thường mất 2 đến 5 phút), nên máy kéo về đúng bản cũ rồi khoá nút 15 phút. Nay Javis kiểm tra image trước và báo "đang đóng gói, thử lại sau ít phút". Nếu Watchtower chạy xong mà không thay được bản mới, trang báo lý do và nút bấm lại được ngay.
