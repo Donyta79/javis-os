@@ -4,6 +4,12 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.65.15] - 2026-10-01
+### Cải thiện
+- **Nghe câu Việt xen tiếng Anh đúng hơn hẳn.** Có key Groq thì Javis tự bật "tai nghe lại": một model đa ngôn ngữ nghe lại âm thanh rồi mới chốt chữ vào bong bóng. Đo trên 20 câu lệnh, trình duyệt sai 41% số từ, qua tai còn 14%.
+- Tai giờ chạy đủ mọi lượt: cả câu đầu tiên sau khi mở trang, chế độ tự nhiên, và câu "Javis ơi" mà trình duyệt nghe thành "David ơi".
+- Trang Cài đặt có ô **Tai nghe lại** (Tự chọn / Groq / Tắt) kèm dòng cho biết tai nào đang chạy và vì sao.
+
 ## [0.65.14] - 2026-10-01
 ### Cải thiện
 - **Nút "Là chủ" trong Bộ phán xử dễ hiểu hơn.** Đổi thành "Đặt làm chủ bot", rê chuột có giải thích. Người đã đặt hiện nhãn "Chủ", đầu menu có danh sách chủ bot kèm nút "Bỏ chủ".
