@@ -1,4 +1,4 @@
-"""Nhà cung cấp NGHE NÓI THẲNG (Voice V2 bậc Live, docs/dev/2026-09-voice-v2-spec.md mục 4).
+"""Nhà cung cấp NGHE NÓI THẲNG (Voice V2 bậc Live, docs/dev/2026-10-voice-call-spec.md phụ lục A5).
 
 Trình duyệt đẩy PCM16 mono 16 kHz lên `/ws/voice-live` (main.py); route đó cầm một
 `LiveProvider` ở đây, chuyển audio sang nhà cung cấp và trả sự kiện chuẩn hoá về:
@@ -51,7 +51,7 @@ PROVIDERS = {
                "default_voice": "Aoede", "voices": ["Aoede", "Puck", "Charon", "Kore", "Fenrir", "Leda", "Orus", "Zephyr"]},
     "openai": {"label": "OpenAI Realtime (API)", "key_field": "openai_api_key",
                "default_model": "gpt-realtime", "default_voice": "marin", "voices": _OPENAI_VOICES},
-    "gpt-live": {"label": "OpenAI GPT-Live (API, song công)", "key_field": "openai_api_key",
+    "gpt-live": {"label": "OpenAI GPT-Live (API)", "key_field": "openai_api_key",
                  "default_model": "gpt-live-1", "default_voice": "marin", "voices": _OPENAI_VOICES},
 }
 
