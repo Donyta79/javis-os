@@ -4,6 +4,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.66.0] - 2026-10-02
+### Cải thiện
+- **Trang GitHub của Javis giờ là tiếng Anh**, có ảnh chụp màn hình thật, bảng 12 bộ não và thanh chọn ngôn ngữ. Bản tiếng Việt vẫn đầy đủ, bấm "Tiếng Việt" ngay đầu trang là sang.
+- **Giao diện tự theo ngôn ngữ của trình duyệt** khi máy đó chưa chọn ngôn ngữ nào. Máy đang dùng tiếng Việt thì giữ nguyên, không bị đổi sang tiếng Anh.
+- **Chỗ nào chưa dịch sẽ hiện tiếng Anh** thay vì tiếng Việt, để người dùng thứ tiếng khác vẫn đọc được.
+- **Lệnh cài đặt và cập nhật trên Linux/macOS in thông báo bằng tiếng Anh.**
+
 ## [0.65.33] - 2026-10-02
 ### Sửa lỗi
 - **Nhờ AI sửa ảnh, khung chat hiện ngay ảnh mới.** Trước đây AI sửa ảnh và ghi đè đúng đường dẫn cũ thì khung chat vẫn hiện ảnh cũ, phải tải lại trang mới thấy, vì trình duyệt dùng lại ảnh đã nạp. Nay mỗi câu trả lời mang một phiên bản ảnh riêng nên ảnh vừa sửa luôn được nạp mới; tin cũ vẫn giữ nguyên, tải lại trang không phải tải lại ảnh.
