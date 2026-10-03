@@ -32,9 +32,11 @@ CAP = [
     # Từ 0.66.0 README gốc là tiếng Anh, bản tiếng Việt dời vào docs/i18n/vi/.
     ("docs/i18n/vi/README.md", "README.md"),
     ("QUICKSTART.md", "QUICKSTART.en.md"),
-    ("CONTRIBUTING.md", "CONTRIBUTING.en.md"),
+    # Từ 0.68.0 CONTRIBUTING.md gốc là tiếng Anh (GitHub tự hiện link tới nó), bản Việt ở docs/i18n/vi/.
+    ("docs/i18n/vi/CONTRIBUTING.md", "CONTRIBUTING.md"),
     ("DEPLOY.md", "DEPLOY.en.md"),
     ("docs/README.md", "docs/en/README.md"),
+    ("docs/dev/them-mot-ngon-ngu.md", "docs/dev/adding-a-language.md"),
     ("docs/01-bat-dau-thiet-lap.md", "docs/en/01-getting-started.md"),
     ("docs/02-tro-chuyen-va-giong-noi.md", "docs/en/02-chat-and-voice.md"),
     ("docs/03-do-thi-tri-thuc.md", "docs/en/03-knowledge-graph.md"),
