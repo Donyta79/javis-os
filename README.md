@@ -15,6 +15,24 @@ Run it on your laptop or a small VPS. Talk to it by voice. Plug in Claude, ChatG
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/blogminhquy/javis-os/pkgs/container/javis-os)
 [![MCP](https://img.shields.io/badge/tools-Model%20Context%20Protocol-8b5cf6)](https://modelcontextprotocol.io)
 
+<!-- flags:start -->
+<p align="center">
+<b>🌐 Available in 12 languages</b><br><br>
+<img src="docs/assets/flags/gb.svg" width="30" alt="English" title="English">
+<a href="docs/i18n/vi/README.md"><img src="docs/assets/flags/vn.svg" width="30" alt="Tiếng Việt" title="Tiếng Việt"></a>
+<a href="docs/i18n/zh/README.md"><img src="docs/assets/flags/cn.svg" width="30" alt="简体中文" title="简体中文"></a>
+<a href="docs/i18n/es/README.md"><img src="docs/assets/flags/es.svg" width="30" alt="Español" title="Español"></a>
+<a href="docs/i18n/ja/README.md"><img src="docs/assets/flags/jp.svg" width="30" alt="日本語" title="日本語"></a>
+<a href="docs/i18n/hi/README.md"><img src="docs/assets/flags/in.svg" width="30" alt="हिन्दी" title="हिन्दी"></a>
+<a href="docs/i18n/pt-BR/README.md"><img src="docs/assets/flags/br.svg" width="30" alt="Português" title="Português"></a>
+<a href="docs/i18n/ko/README.md"><img src="docs/assets/flags/kr.svg" width="30" alt="한국어" title="한국어"></a>
+<a href="docs/i18n/ru/README.md"><img src="docs/assets/flags/ru.svg" width="30" alt="Русский" title="Русский"></a>
+<a href="docs/i18n/de/README.md"><img src="docs/assets/flags/de.svg" width="30" alt="Deutsch" title="Deutsch"></a>
+<a href="docs/i18n/fr/README.md"><img src="docs/assets/flags/fr.svg" width="30" alt="Français" title="Français"></a>
+<a href="docs/i18n/id/README.md"><img src="docs/assets/flags/id.svg" width="30" alt="Bahasa Indonesia" title="Bahasa Indonesia"></a>
+</p>
+<!-- flags:end -->
+
 🇬🇧 **English** · [🇻🇳 Tiếng Việt](docs/i18n/vi/README.md) · [🇨🇳 简体中文](docs/i18n/zh/README.md) · [🇪🇸 Español](docs/i18n/es/README.md) · [🇯🇵 日本語](docs/i18n/ja/README.md) · [🇮🇳 हिन्दी](docs/i18n/hi/README.md) · [🇧🇷 Português](docs/i18n/pt-BR/README.md) · [🇰🇷 한국어](docs/i18n/ko/README.md) · [🇷🇺 Русский](docs/i18n/ru/README.md) · [🇩🇪 Deutsch](docs/i18n/de/README.md) · [🇫🇷 Français](docs/i18n/fr/README.md) · [🇮🇩 Bahasa Indonesia](docs/i18n/id/README.md) · [🌍 Help translate](CONTRIBUTING.md#translations)
 
 [Quick start](#-quick-start) · [Why Javis](#-why-javis) · [Brains](#-12-brains-one-toolkit) · [Features](#-features) · [Install](#-installation) · [Docs](docs/en/README.md) · [Support](#-support-javis-os)
@@ -52,6 +70,42 @@ Then open **http://localhost:7777**. The installer sets up Python, the four subs
 
 Javis OS is **not** a chatbot. It is a **self-hosted agentic AI** that runs on your own machine or VPS: it reads and writes files, calls tools over MCP, runs skills, queues background work and schedules itself. All of that sits behind a **voice-controlled dashboard** with a **Second Brain** (memory + wiki) that accumulates knowledge over time.
 
+### The lock-in nobody warns you about
+
+Pick one AI app and use it every day for a year. Then look at what has piled up inside it:
+
+- **Hundreds of conversations**, holding the decisions and context you worked out along the way.
+- **Memory** of who you are, how you work and what your business sells.
+- **Custom instructions, assistants and projects**: know-how you spent hours tuning.
+- **Automations and agents** that only run on that one platform.
+
+All of it sits on the vendor's servers, in the vendor's format. Then a better model ships somewhere else. You can try it, but you cannot bring your work along: the new app knows nothing about you, your instructions do not carry over, and your history stays behind. Exports, where they exist, are usually a dump of chat logs, not memory another tool can use.
+
+So you stay. Not because the old model is still the best, but because leaving means starting from zero. And when the vendor raises prices, tightens limits, retires a model or locks your account, there is no plan B.
+
+### Javis turns it around: rent the model, own the brain
+
+In Javis the model is a part you can swap. Everything you build up lives with you, as files you can open:
+
+| What you build up | Where it lives | Format |
+|---|---|---|
+| **Conversations** | `conversations.db` on your own machine or VPS, one store whichever brain answered | SQLite, full-text searchable |
+| **Memory about you** | `memory/` in your brain: `MEMORY.md` plus one file per fact | Markdown |
+| **Knowledge** | the Wiki and Sources folders of your brain | Markdown, Obsidian-compatible |
+| **Skills** | `skills/<name>/SKILL.md` | Markdown |
+| **Agents and workflows** | `agents/*.md`, `workflows/*.md` | Markdown with front matter |
+| **Loops and reminders** | `Javis/loops/*.md`, `Javis/reminders.json` | Markdown, JSON |
+
+What that buys you:
+
+- **A new model comes out? Switch on the Models page and keep going.** It reads the same memory, runs the same skills, agents and workflows, and calls the same connections through the MCP Hub. Nothing to migrate, nothing to rebuild.
+- **Use several brains at once.** A strong model for the conversation, a cheaper one for background work, a local Ollama model for private notes, all working on the same brain.
+- **Readable without Javis.** Your brain is a folder of markdown. Open it in Obsidian or any editor. If Javis disappeared tomorrow, your knowledge would still be there, in plain text.
+- **Versioned and portable.** Every learning pass is a git commit you can undo in one tap, and the whole brain can sync to your own private GitHub repo, shared between your laptop and your VPS.
+- **Your data stays on your hardware.** There is no Javis cloud in between. A request goes only to the model provider you picked for it, and with a local Ollama model it never leaves your machine.
+
+### Javis next to an ordinary chatbot
+
 | | An ordinary chatbot | **Javis OS** |
 |---|---|---|
 | **Brain** | Locked to one model, one stateless API call per message | **Swappable**: 12 providers, each with the full set of tools, MCP, skills and sessions, including models running on your own machine through Ollama |
@@ -59,6 +113,7 @@ Javis OS is **not** a chatbot. It is a **self-hosted agentic AI** that runs on y
 | **Data** | Made up, or absent | **Real numbers** from the connections you wire in (sales, ads, calendar, email, messaging) |
 | **Work** | Answers, then waits | **Background loops, reminders and an AI-run task queue** that report back to you |
 | **Interface** | A chat box | Dashboard + knowledge graph + **hands-free voice** + Telegram + a CLI |
+| **Your work** | Stays on the vendor's servers, in the vendor's format | **Plain files on your machine**: history, memory, skills, agents and workflows carry over to any new model |
 | **Deployment** | Someone else's cloud | **Self-hosted**: one-click Hostinger, Docker, or any VPS |
 
 > 💡 **The philosophy: capability lives in Javis, not in the model.** Every brain gets the same toolbox through one shared connection hub (the MCP Hub). Switching from Claude to Gemini costs you nothing except shell access, which only the CLI engines have.

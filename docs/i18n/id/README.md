@@ -1,4 +1,4 @@
-<!-- translated-from: README.md sha256:b4a0c4282066 -->
+<!-- translated-from: README.md sha256:a93defe7ef8b -->
 <div align="center">
 
 <img src="../../../dashboard/logo.svg" width="88" alt="Logo Javis OS">
@@ -15,6 +15,24 @@ Jalankan di laptop atau VPS kecil. Ajak bicara dengan suara. Pasang Claude, Chat
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776ab?logo=python&logoColor=white)](../../../requirements.txt)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/blogminhquy/javis-os/pkgs/container/javis-os)
 [![MCP](https://img.shields.io/badge/tools-Model%20Context%20Protocol-8b5cf6)](https://modelcontextprotocol.io)
+
+<!-- flags:start -->
+<p align="center">
+<b>🌐 Tersedia dalam 12 bahasa</b><br><br>
+<a href="../../../README.md"><img src="../../assets/flags/gb.svg" width="30" alt="English" title="English"></a>
+<a href="../vi/README.md"><img src="../../assets/flags/vn.svg" width="30" alt="Tiếng Việt" title="Tiếng Việt"></a>
+<a href="../zh/README.md"><img src="../../assets/flags/cn.svg" width="30" alt="简体中文" title="简体中文"></a>
+<a href="../es/README.md"><img src="../../assets/flags/es.svg" width="30" alt="Español" title="Español"></a>
+<a href="../ja/README.md"><img src="../../assets/flags/jp.svg" width="30" alt="日本語" title="日本語"></a>
+<a href="../hi/README.md"><img src="../../assets/flags/in.svg" width="30" alt="हिन्दी" title="हिन्दी"></a>
+<a href="../pt-BR/README.md"><img src="../../assets/flags/br.svg" width="30" alt="Português" title="Português"></a>
+<a href="../ko/README.md"><img src="../../assets/flags/kr.svg" width="30" alt="한국어" title="한국어"></a>
+<a href="../ru/README.md"><img src="../../assets/flags/ru.svg" width="30" alt="Русский" title="Русский"></a>
+<a href="../de/README.md"><img src="../../assets/flags/de.svg" width="30" alt="Deutsch" title="Deutsch"></a>
+<a href="../fr/README.md"><img src="../../assets/flags/fr.svg" width="30" alt="Français" title="Français"></a>
+<img src="../../assets/flags/id.svg" width="30" alt="Bahasa Indonesia" title="Bahasa Indonesia">
+</p>
+<!-- flags:end -->
 
 [🇬🇧 English](../../../README.md) · [🇻🇳 Tiếng Việt](../vi/README.md) · [🇨🇳 简体中文](../zh/README.md) · [🇪🇸 Español](../es/README.md) · [🇯🇵 日本語](../ja/README.md) · [🇮🇳 हिन्दी](../hi/README.md) · [🇧🇷 Português](../pt-BR/README.md) · [🇰🇷 한국어](../ko/README.md) · [🇷🇺 Русский](../ru/README.md) · [🇩🇪 Deutsch](../de/README.md) · [🇫🇷 Français](../fr/README.md) · 🇮🇩 **Bahasa Indonesia** · [🌍 Bantu menerjemahkan](../../../CONTRIBUTING.md#translations)
 
@@ -55,6 +73,42 @@ Lalu buka **http://localhost:7777**. Installer akan menyiapkan Python, empat ota
 
 Javis OS **bukan** chatbot. Ini adalah **AI agentik self-hosted** yang berjalan di mesin atau VPS Anda sendiri: ia membaca dan menulis file, memanggil tool lewat MCP, menjalankan skill, mengantrekan pekerjaan background, dan menjadwalkan dirinya sendiri. Semua itu ada di balik **dashboard yang bisa dikendalikan dengan suara** dan sebuah **Second Brain** (memori + wiki) yang mengumpulkan pengetahuan dari waktu ke waktu.
 
+### Jebakan lock-in yang tidak pernah diperingatkan siapa pun
+
+Pilih satu aplikasi AI dan pakai setiap hari selama setahun. Lalu lihat apa saja yang sudah menumpuk di dalamnya:
+
+- **Ratusan percakapan**, berisi keputusan dan konteks yang Anda susun sepanjang jalan.
+- **Memori** tentang siapa Anda, cara Anda bekerja, dan apa yang dijual bisnis Anda.
+- **Instruksi khusus, asisten, dan proyek**: know-how yang Anda setel berjam-jam.
+- **Otomasi dan agent** yang hanya berjalan di platform itu saja.
+
+Semuanya tersimpan di server vendor, dalam format vendor. Lalu model yang lebih baik muncul di tempat lain. Anda bisa mencobanya, tetapi pekerjaan Anda tidak bisa ikut dibawa: aplikasi baru itu tidak tahu apa pun tentang Anda, instruksi Anda tidak terbawa, dan riwayat Anda tertinggal. Fitur ekspor, kalaupun ada, biasanya hanya tumpukan log chat, bukan memori yang bisa dipakai tool lain.
+
+Jadi Anda bertahan. Bukan karena model lama masih yang terbaik, tetapi karena pindah berarti mulai dari nol. Dan ketika vendor menaikkan harga, memperketat batas, mempensiunkan sebuah model, atau mengunci akun Anda, tidak ada rencana B.
+
+### Javis membaliknya: sewa modelnya, miliki Brain Anda sendiri
+
+Di Javis, model adalah komponen yang bisa Anda tukar. Semua yang Anda bangun tetap bersama Anda, sebagai file yang bisa Anda buka:
+
+| Yang Anda bangun | Tempat tinggalnya | Format |
+|---|---|---|
+| **Percakapan** | `conversations.db` di mesin atau VPS Anda sendiri, satu tempat penyimpanan, otak mana pun yang menjawab | SQLite, bisa dicari full-text |
+| **Memori tentang Anda** | `memory/` di Brain Anda: `MEMORY.md` ditambah satu file per fakta | Markdown |
+| **Pengetahuan** | folder Wiki dan Sources di Brain Anda | Markdown, kompatibel dengan Obsidian |
+| **Skills** | `skills/<name>/SKILL.md` | Markdown |
+| **Agent dan workflow** | `agents/*.md`, `workflows/*.md` | Markdown dengan front matter |
+| **Loop dan pengingat** | `Javis/loops/*.md`, `Javis/reminders.json` | Markdown, JSON |
+
+Apa yang Anda dapatkan dari situ:
+
+- **Ada model baru? Ganti di halaman Models dan lanjutkan saja.** Ia membaca memori yang sama, menjalankan skill, agent, dan workflow yang sama, serta memanggil koneksi yang sama lewat MCP Hub. Tidak ada yang perlu dimigrasi, tidak ada yang perlu dibangun ulang.
+- **Pakai beberapa otak sekaligus.** Model yang kuat untuk percakapan, yang lebih murah untuk pekerjaan background, model Ollama lokal untuk catatan pribadi, semuanya bekerja di Brain yang sama.
+- **Bisa dibaca tanpa Javis.** Brain Anda adalah folder berisi markdown. Buka di Obsidian atau editor apa pun. Kalau Javis hilang besok, pengetahuan Anda tetap ada, dalam teks biasa.
+- **Berversi dan portabel.** Setiap proses belajar adalah satu git commit yang bisa Anda batalkan dengan satu ketukan, dan seluruh Brain bisa disinkronkan ke repo GitHub privat milik Anda sendiri, dipakai bersama antara laptop dan VPS Anda.
+- **Data Anda tetap di perangkat keras Anda.** Tidak ada cloud Javis di tengah. Sebuah request hanya dikirim ke penyedia model yang Anda pilih untuknya, dan dengan model Ollama lokal, request itu tidak pernah keluar dari mesin Anda.
+
+### Javis dibandingkan chatbot biasa
+
 | | Chatbot biasa | **Javis OS** |
 |---|---|---|
 | **Otak** | Terkunci di satu model, satu panggilan API stateless per pesan | **Bisa diganti**: 12 provider, masing-masing dengan set lengkap tool, MCP, skill dan sesi, termasuk model yang berjalan di mesin Anda sendiri lewat Ollama |
@@ -62,6 +116,7 @@ Javis OS **bukan** chatbot. Ini adalah **AI agentik self-hosted** yang berjalan 
 | **Data** | Mengarang, atau tidak ada | **Angka nyata** dari koneksi yang Anda pasang (penjualan, iklan, kalender, email, pesan) |
 | **Pekerjaan** | Menjawab, lalu menunggu | **Loop background, pengingat, dan antrean tugas yang dijalankan AI** yang melapor kembali ke Anda |
 | **Antarmuka** | Kotak chat | Dashboard + knowledge graph + **suara hands-free** + Telegram + CLI |
+| **Hasil kerja Anda** | Tertinggal di server vendor, dalam format vendor | **File biasa di mesin Anda**: riwayat, memori, skill, agent, dan workflow ikut pindah ke model baru mana pun |
 | **Deployment** | Cloud milik orang lain | **Self-hosted**: Hostinger sekali klik, Docker, atau VPS apa pun |
 
 > 💡 **Filosofinya: kemampuan ada di Javis, bukan di model.** Setiap otak mendapat kotak peralatan yang sama lewat satu hub koneksi bersama (MCP Hub). Beralih dari Claude ke Gemini tidak membuat Anda kehilangan apa pun kecuali akses shell, yang hanya dimiliki engine CLI.
