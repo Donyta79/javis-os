@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.70.0] - 2026-10-03
+### Cải thiện
+- **README có 5 hình động.** Cài đặt bằng một lệnh, đổi bộ não mà giữ nguyên công cụ, một câu chat thành đúng hành động, Second Brain lớn dần, việc chạy nền qua đêm. Hình nhẹ, nét trên điện thoại, và đứng yên nếu máy bật chế độ giảm chuyển động.
+- **README có thêm 7 thứ tiếng:** Hindi, Bồ Đào Nha, Hàn, Nga, Đức, Pháp, Indonesia. Tổng cộng 12 thứ tiếng, thanh chọn ngôn ngữ tự sinh từ một danh sách nên không bao giờ thiếu hay trỏ vào trang không có.
+
 ## [0.69.0] - 2026-10-03
 ### Cải thiện
 - **README có thêm tiếng Trung, Tây Ban Nha và Nhật.** Cả hướng dẫn cài nhanh cũng vậy. Mỗi bản ghi rõ đây là bản máy dịch, Javis trả lời bằng mọi thứ tiếng, còn giao diện có tiếng Anh và tiếng Việt.
