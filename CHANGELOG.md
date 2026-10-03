@@ -6,6 +6,12 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.69.0] - 2026-10-03
+### Cải thiện
+- **README có thêm tiếng Trung, Tây Ban Nha và Nhật.** Cả hướng dẫn cài nhanh cũng vậy. Mỗi bản ghi rõ đây là bản máy dịch, Javis trả lời bằng mọi thứ tiếng, còn giao diện có tiếng Anh và tiếng Việt.
+- **Tự báo khi bản dịch đã cũ.** Sửa README tiếng Anh xong, GitHub chỉ ra bản dịch nào cần cập nhật, không chặn việc phát hành.
+- **Bỏ thư mục website.** Trang giới thiệu sẽ đặt ở nơi khác, repo gọn hơn.
+
 ## [0.68.1] - 2026-10-03
 ### Cải thiện
 - **Ảnh giới thiệu trên GitHub dùng một brain thật.** Ảnh đầu README và ảnh xem trước khi chia sẻ link giờ là graph của một brain hơn 1.600 ghi chú, thay cho brain trống trước đây.

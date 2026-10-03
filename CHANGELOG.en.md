@@ -8,6 +8,12 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.69.0] - 2026-10-03
+### Improved
+- **The README now also comes in Chinese, Spanish and Japanese**, and so does the quick start. Each says plainly that it is a machine translation, that Javis replies in any language, and that the interface is in English and Vietnamese.
+- **Stale translations get flagged.** After an edit to the English README, GitHub points out which translations need updating, without blocking a release.
+- **The website folder is gone.** The landing page will live elsewhere, which keeps the repo lean.
+
 ## [0.68.1] - 2026-10-03
 ### Improved
 - **The GitHub page shows a real brain.** The screenshot at the top of the README and the link preview image now show the graph of a brain with more than 1,600 notes, instead of an empty one.
