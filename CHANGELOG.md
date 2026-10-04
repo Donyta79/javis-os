@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.74.1] - 2026-10-04
+### Sửa lỗi
+- **Bot Zalo xem được ảnh khách gửi.** Tag bot kèm một ảnh (kiểu "@Javis Vũ đây em") thì bot không còn trả lời "em chỉ đọc được chú thích" nữa: Javis lấy ảnh về brain của bot, nhờ ChatGPT trên gói đang đăng nhập nhìn và tả lại, nên bot trả lời đúng theo nội dung ảnh. Chạy được cả khi chủ bấm "Trả lời giúp" ở Hộp thư.
+- **Chưa đăng nhập ChatGPT thì bot vẫn trả lời như cũ**, dựa vào chú thích và nói rõ là chưa xem được ảnh, không bao giờ đoán bừa nội dung ảnh.
+
 ## [0.74.0] - 2026-10-04
 ### Tính năng mới
 - **Tông màu tự đổi theo giờ.** Vào **Cài đặt → Chung → Tông màu** chọn Tối, Sáng hoặc Tự động. Để Tự động thì tới giờ sáng trang tự sáng, tới giờ tối tự tối, mặc định 06:00 và 18:00, sửa được cả hai mốc.
