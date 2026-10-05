@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.83.1] - 2026-10-05
+### Sửa lỗi
+- **Trên Windows, đường dẫn file trong câu trả lời lại bấm được.** Khi Javis báo "Đã lưu tại C:\...\bai-1.txt" mà không bọc trong dấu nháy ngược, khung chat giờ biến nó thành link mở file như trên Linux và macOS.
+- **Trên Windows, đổi múi giờ ở Cài đặt giờ có tác dụng.** Trước đây chọn múi giờ nào khác Việt Nam thì Javis vẫn lặng lẽ tính theo giờ Việt Nam, vì Windows thiếu bảng múi giờ. Bản cập nhật tự cài bảng đó.
+
 ## [0.83.0] - 2026-10-05
 ### Cải thiện
 - **Zalo chạy bản riêng của Javis.** Kết nối Zalo cá nhân giờ dùng `javis-zalo`, do Javis tự giữ và tự sửa, thay cho công cụ của tác giả bên ngoài. Tài khoản đã quét QR từ trước tự chuyển sang, không phải quét lại.
