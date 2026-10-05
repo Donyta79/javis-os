@@ -6,6 +6,15 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.82.0] - 2026-10-05
+### Cải thiện
+- **Kết nối MCP của bên thứ 3 luôn chạy bản chính thức mới nhất.** Google Search Console, Google Workspace, Google Tasks, Google Keep, NotebookLM và Google Ads tự lên bản mới mỗi khi bên phát hành ra bản, thay vì kẹt ở bản máy tải lần đầu.
+- **Kết nối đã tạo từ trước cũng tự lên lệnh mới.** Trước đây mỗi kết nối giữ nguyên lệnh chạy lúc tạo, nên bản sửa trong app không tới được máy đã kết nối sẵn (Zalo cũ chạy bản không ghim, Google Sheets cũ thiếu bản vá). Lệnh bạn tự sửa tay thì vẫn giữ nguyên.
+- **Google Ads không cần cài Git nữa.** Javis chạy bản chính thức của Google trên PyPI thay cho code chưa phát hành trên GitHub, và bỏ ô Google Cloud Project ID vì không còn dùng tới.
+### Bảo mật
+- **Google Workspace không còn chạy Apps Script ở mức Ghi nháp.** Bản mới của Workspace có công cụ chạy hàm Apps Script mà Javis lỡ xếp vào nhóm chỉ đọc. Giờ nó cần Toàn quyền, còn các công cụ nhập tệp vào Docs, Sheets, Slides tính là ghi.
+- Kết nối dạng cổng (một công cụ chạy được nhiều lệnh, như Hostinger bản mới) được xét quyền theo từng lệnh bên trong: lệnh đọc chạy ở mức Chỉ đọc, lệnh lạ tính là nguy hiểm.
+
 ## [0.81.1] - 2026-10-05
 ### Sửa lỗi
 - **Khoá mã hoá lệch không còn xoá sạch các kết nối.** Key API, đăng nhập ChatGPT, token Telegram được mã hoá bằng khoá riêng của máy. Khi khoá bị lệch (dựng lại volume, mất file khoá), trước đây chỉ cần một lần lưu cài đặt, hay lần khởi động đầu sau cập nhật, là các giá trị đó bị ghi rỗng vĩnh viễn. Giờ Javis giữ nguyên bản mã hoá cũ, trả đúng khoá về là mọi kết nối quay lại.
