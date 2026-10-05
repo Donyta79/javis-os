@@ -6,6 +6,14 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.77.0] - 2026-10-05
+### Thêm mới
+- **Bộ phán xử của bot nhóm tự soát và tự chỉnh.** Khi gom đủ phản hồi, Javis đưa số liệu của bot cho bộ não chính (model mạnh nhất bạn chọn) tìm mẫu lặp lại, rồi tự chỉnh tối đa 3 chỗ: bài học, ca mẫu, ngưỡng từng nhóm, độ hăng nói. Mỗi lần có chỉnh thì bạn nhận một tin báo.
+- **Sai thì tự hoàn.** Sau mỗi lần soát máy tự đo: bot bị chấm sai nhiều hơn thì lần soát đó tự hoàn lại. Chỗ phải sửa trong mã thì được ghi vào `Javis/gop-y-bo-phan-xu.md`.
+- **Muốn chỉnh thì nói với Javis.** "Vì sao Javis Vũ im nhiều thế?", "cho bot trả lời thay anh khi khách tag anh hỏi lịch học", "hoàn lại lần soát vừa rồi": Javis đọc đúng số liệu thật rồi chỉnh. Bot chăm khách không bao giờ thấy các công cụ này.
+### Sửa lỗi
+- Tin khách mở đầu bằng **@tag người khác** (ví dụ tag chủ hỏi việc của bot) trước đây bị bỏ qua dù bạn bấm Sai hay dạy bằng lời. Giờ bấm Sai là có tác dụng, và vòng tự soát bật được chế độ xét loại tin này.
+
 ## [0.76.0] - 2026-10-05
 ### Cải thiện
 - **Trang Kỹ năng làm lại cho dễ dùng.** Mỗi kỹ năng có công tắc bật/tắt riêng ở bên phải, hết cảnh hai ô tick giống nhau mà bấm nhầm là tắt mất kỹ năng. Bấm vào một kỹ năng là mở khung chi tiết: mô tả, mục "Dùng khi nào", số lần dùng, nút Sửa, Xuất, Xoá.
