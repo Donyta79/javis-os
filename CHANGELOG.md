@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.81.1] - 2026-10-05
+### Sửa lỗi
+- **Khoá mã hoá lệch không còn xoá sạch các kết nối.** Key API, đăng nhập ChatGPT, token Telegram được mã hoá bằng khoá riêng của máy. Khi khoá bị lệch (dựng lại volume, mất file khoá), trước đây chỉ cần một lần lưu cài đặt, hay lần khởi động đầu sau cập nhật, là các giá trị đó bị ghi rỗng vĩnh viễn. Giờ Javis giữ nguyên bản mã hoá cũ, trả đúng khoá về là mọi kết nối quay lại.
+- Khoá vẫn đúng thì không có gì thay đổi: bạn xoá hay đổi key vẫn như bình thường, và key gõ lại mới luôn được lưu.
+
 ## [0.81.0] - 2026-10-05
 ### Thêm mới
 - **Bot tự nhìn ảnh khách gửi bằng chính bộ não của nó.** Ảnh đi thẳng vào lượt chat cho Claude, GPT, Gemini, OpenRouter, Groq, Ollama, gói ChatGPT hay gói Claude Code xem, không còn phụ thuộc ChatGPT tả hộ. Ảnh lưu trong brain của bot và tự dọn như mọi file tải về.
