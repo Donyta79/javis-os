@@ -6,6 +6,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.77.1] - 2026-10-05
+### Sửa lỗi
+- **Đổi mật khẩu admin trên Hostinger giờ có tác dụng.** Trước đây `JAVIS_ADMIN_PASSWORD` chỉ dùng lúc máy chưa có admin, nên đổi trong ô Environment rồi Redeploy vẫn báo "Sai tài khoản hoặc mật khẩu". Nay env đổi so với lần trước là Javis đặt lại tài khoản theo nó, 2FA giữ nguyên, phiên cũ bị đăng xuất.
+- Env để nguyên thì không đụng gì, nên mật khẩu bạn đổi trong dashboard không bị ghi đè mỗi lần khởi động lại. Đây cũng là đường lấy lại mật khẩu trên VPS, không cần SSH.
+### Cải thiện
+- **Nút con mắt ở ô mật khẩu màn đăng nhập** để xem mình gõ đúng chưa.
+
 ## [0.77.0] - 2026-10-05
 ### Thêm mới
 - **Bộ phán xử của bot nhóm tự soát và tự chỉnh.** Khi gom đủ phản hồi, Javis đưa số liệu của bot cho bộ não chính (model mạnh nhất bạn chọn) tìm mẫu lặp lại, rồi tự chỉnh tối đa 3 chỗ: bài học, ca mẫu, ngưỡng từng nhóm, độ hăng nói. Mỗi lần có chỉnh thì bạn nhận một tin báo.
