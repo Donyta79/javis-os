@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.84.3] - 2026-10-06
+### Thêm mới
+- **Bot chuyên trách gửi được ảnh cho khách.** Dặn trong Agent khi nào gửi ảnh nào (vd "khách hỏi mẫu áo thì gửi `![Mẫu áo](attachments/mau-ao.jpg)`"), bot gửi ảnh thật ngay sau câu trả lời. Chạy trên Zalo cá nhân, Telegram, Slack và WhatsApp, ở mọi mức quyền.
+- Chỉ ảnh có thật trong brain của chính bot mới được gửi, tối đa 4 ảnh mỗi lần, không quá 10 MB. File tài liệu như PDF không gửi, và bot không tự đính kèm file nào ngoài ảnh Agent đã chỉ đích danh.
+
 ## [0.84.2] - 2026-10-06
 ### Thêm mới
 - **Biết ai vừa vào nhóm Zalo và vào lúc nào.** Hỏi "tuần này ai mới vào nhóm X" là Javis trả tên kèm giờ vào, kể cả người do chính tài khoản của bạn thêm vào. Nhật ký giữ lại sau khi khởi động lại.
