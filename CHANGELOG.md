@@ -6,6 +6,12 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.84.2] - 2026-10-06
+### Thêm mới
+- **Biết ai vừa vào nhóm Zalo và vào lúc nào.** Hỏi "tuần này ai mới vào nhóm X" là Javis trả tên kèm giờ vào, kể cả người do chính tài khoản của bạn thêm vào. Nhật ký giữ lại sau khi khởi động lại.
+- **Bot nhận được sự kiện người mới vào nhóm.** Ở nhóm đã cho phép, Agent của bot làm theo chỉ dẫn bạn viết (chào, hỏi thăm) và câu nó gửi tự tag đúng người mới. Javis không có lời chào mặc định: Agent không được dặn gì về người mới thì bot im.
+- Zalo chỉ báo lúc đang kết nối, và danh sách thành viên không có ngày vào nhóm, nên người vào trước khi có tính năng này hay trong lúc máy tắt thì không có giờ vào.
+
 ## [0.83.2] - 2026-10-06
 ### Bảo mật
 - **Bot không còn đọc được lệnh giấu bằng ký tự vô hình.** Người lạ nhắn tin có thể chèn chữ không hiện ra trên màn hình (ký tự ẩn, ký tự đảo chiều chữ) để lén ra lệnh cho bot mà chủ đọc hộp thư không thấy. Giờ mọi tin từ Telegram, Zalo và bot khách đều được gỡ sạch các ký tự này trước khi tới bộ não và trước khi lưu lại.
