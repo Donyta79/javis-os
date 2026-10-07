@@ -6,6 +6,12 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.85.3] - 2026-10-07
+### Sửa lỗi
+- **Bot ở mức Toàn quyền giờ chạy y như kênh admin.** Trước đây mức này vẫn đi đường hẹp của bot: với Grok Build và Antigravity bot không dùng được công cụ nào, với Claude Code thì không thấy các kết nối Gmail, Drive, lịch của tài khoản Claude. Giờ bot Toàn quyền có đúng bộ não, công cụ, MCP và kỹ năng như khi bạn chat trực tiếp, chỉ giữ vai của Agent.
+- Vì vậy mức Toàn quyền trao cả quyền chạy lệnh trên máy chủ và đọc mọi file. Cảnh báo trước khi bật đã nói rõ điều này: chỉ bật cho bot mà chỉ bạn hoặc người bạn tin tuyệt đối nhắn được.
+- Câu trả lời qua Telegram, Zalo, Slack... bằng Grok Build hoặc Antigravity nay được lưu đúng vào lịch sử và bộ nhớ, không còn bị ghi như một câu lỗi.
+
 ## [0.85.1] - 2026-10-07
 ### Cải thiện
 - **Bản Docker tự cài Antigravity CLI và Grok Build.** Trước đây hai thẻ này ở trang Models báo "CLI chưa cài" kèm một lệnh phải tự gõ, mà cài qua Hostinger thì không có chỗ gõ. Giờ Javis tự cài lúc khởi động, cài một lần là giữ qua mọi lần cập nhật.
