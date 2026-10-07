@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.85.5] - 2026-10-07
+### Cải thiện
+- **Bỏ hạn mức lúc bot tự lên tiếng trong nhóm.** Trước đây ở chế độ Tự đánh giá, bot chỉ tự trả lời tối đa 8 lần mỗi nhóm, 3 lần mỗi người mỗi giờ, và nghỉ giữa hai lần. Giờ nói hay im do bộ phán xử và mô hình tự quyết theo vai của Agent và tài liệu; bạn chỉnh bằng nút Đúng/Sai ở Bộ phán xử.
+- Bot vẫn chờ một nhịp và nhường khi bạn đang gõ tay bằng chính nick đó. Nhóm đông hỏi nhiều sẽ tốn lượt dùng model nhiều hơn; muốn bớt thì đổi nhóm đó về chế độ Được gọi tên.
+
 ## [0.85.4] - 2026-10-07
 ### Cải thiện
 - **Bot không còn giới hạn 20 câu mỗi người mỗi giờ.** Ai nhắn riêng hay gọi tên bot đều được trả lời, không còn câu "Anh chị nhắn hơi nhanh".
