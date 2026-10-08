@@ -6,6 +6,10 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.85.9] - 2026-10-08
+### Sửa lỗi
+- **Bấm Cập nhật ngay trên bản Docker thì trang xoay chờ đến khi bản mới lên rồi tự tải lại, không còn báo lỗi oan.** Trước đây trang chỉ chờ khoảng 36 giây rồi báo "Bản mới chưa lên sau một lúc - có thể lỗi", trong khi Watchtower vẫn đang kéo bản mới về và một lúc sau trang tự lên bản mới. Giờ trang chờ tới 10 phút. Quá 45 giây thì nói rõ là vẫn đang kéo bản mới, máy chậm có thể mất vài phút. Lỗi thật (Watchtower báo lỗi, chưa có image mới) vẫn hiện ngay như cũ. Thanh "Tải lại / Để sau" cũng không hiện thừa giữa lúc đang cập nhật nữa.
+
 ## [0.85.8] - 2026-10-08
 ### Thêm mới
 - **Plugin biết ai đang nói trong lượt gọi công cụ.** Hook `pre_tool_call` và `post_tool_call` nhận thêm khoá `turn` (kênh, người gửi, nhóm hay chat riêng, có phải chủ không), nên một plugin bọc ứng dụng có phân quyền theo từng nhân viên có thể chạy công cụ đúng quyền của người đang nhắn cho bot. Danh tính lấy từ tin nhắn thật chứ không từ chữ model viết, và bot không bao giờ được coi là chủ. (Đóng góp của @nnbaonam96.)
