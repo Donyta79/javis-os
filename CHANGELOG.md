@@ -6,6 +6,15 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.94.0] - 2026-10-11
+### Cải thiện
+- **Bot xem được ảnh khách gửi dù chạy bằng model nào.** Model của bot nhìn được ảnh thì vẫn tự nhìn như cũ. Model không nhìn được ảnh (Antigravity, Grok Build, model chỉ đọc chữ) hoặc trả về rỗng khi có ảnh thì một bộ não khác bạn đã kết nối xem hộ và tả lại, chép đúng giá, mã đơn, số điện thoại trong ảnh. Thứ tự mượn: bộ não chính, rồi gói ChatGPT, rồi Claude Code.
+- **Bot nhớ ảnh lúc nãy có gì.** Khách hỏi tiếp "cái trong ảnh vừa rồi" thì bot vẫn biết, vì phần mô tả được giữ lại trong cuộc chat.
+
+### Sửa lỗi
+- **Ảnh Zalo không còn bị bỏ oan.** Máy chủ ảnh của Zalo gửi một số ảnh với nhãn "file nhị phân" thay vì nhãn ảnh, và Javis bỏ qua ảnh đó trước khi bot kịp thấy. Giờ Javis nhìn chính nội dung file để nhận ra ảnh.
+- **Thẻ bot ghi lỗi thật khi model không nhận ảnh**, thay vì câu chung chung "từ chối ảnh". Không bộ não nào xem hộ được thì thẻ nói rõ vì sao từng bộ não không xem được.
+
 ## [0.92.2] - 2026-10-11
 ### Sửa lỗi
 - **Ollama (Local) dùng được công cụ.** Chọn model Ollama chạy trên máy mình thì model không đọc được file, không gọi được kết nối nào và tự báo "không có quyền tool", vì Javis quên nạp công cụ cho đúng loại model này. Giờ model local nhận đủ công cụ như các model API khác, và trang Kết nối hết báo nhầm là nó không gọi được công cụ.
