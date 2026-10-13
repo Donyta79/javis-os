@@ -8,6 +8,12 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.105.0] - 2026-10-13
+### Fixed
+- **Self-learning no longer makes an agent forget rules you gave it.** Before, each time self-learning improved an agent it rewrote the agent's whole instructions, so a rule like "no markdown in Zalo messages" could vanish after a few rounds. Now self-learning can only add new rules at the end, and what you wrote stays as it is.
+- **Rules you give in chat are kept for good.** When you give an agent a lasting rule, it goes into an **Owner rules** section of the agent's memory. That section is never pushed out the way self-made lessons are (only the 15 newest are kept).
+- **A last safety check.** Any write that would drop even one line you wrote in an agent or its memory is refused.
+
 ## [0.103.0] - 2026-10-13
 ### Improved
 - **Permissions per command for bundled tools.** An MCP tool that bundles several commands, such as GitHub's label tool that creates, edits and deletes labels, is now checked against the command actually called. Create and edit run at Draft level, delete still needs Full access.
