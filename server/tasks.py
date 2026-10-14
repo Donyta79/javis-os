@@ -35,7 +35,7 @@ import localefmt          # giờ hiển thị theo múi giờ người dùng, k
 import limit_learner      # nhận diện "gói thuê bao hết lượt" - CÙNG bộ mẫu với khung chat
 import limit_resume       # mượn hằng trừ hao / trần chờ của khung chat, không đẻ bộ số thứ hai
 import plugins_host
-from task_store import TaskStore, VALID_STATUS
+from task_store import TaskStore, VALID_STATUS, agent_prefix as _agent_prefix
 
 
 LEASE_SECONDS = 90
@@ -141,6 +141,9 @@ class TasksDeps:
     # Nối Kanban → tự học: việc nền chạy xong/vướng thì xếp vào hàng đợi học (learn.enqueue_job).
     # Tiêm sau khi learn_feature sẵn sàng (main gán). None = chưa nối → bỏ qua, worker chạy như cũ.
     learn_hook: Optional[Callable] = None
+    # 0.142.0: việc giao cho một trợ lý (nút Giao việc ở tab Công việc) chạy với vai của trợ lý đó. (root, slug) -> đoạn
+    # lời nhắc vai trò, rỗng khi không có. Engine, quyền và trần của Kanban giữ nguyên.
+    agent_persona: Optional[Callable[[str, str, str], str]] = None
 
 
 class TasksFeature:
@@ -261,6 +264,7 @@ class TasksFeature:
         capability: str = "auto",
         execution_mode: str = "auto",
         idempotency_key: str = "",
+        dedupe_title: bool = True,
     ) -> str:
         root = self._ensure(brain)
         status = "todo" if deps else "triage"
@@ -278,6 +282,7 @@ class TasksFeature:
             execution_mode if execution_mode in EXECUTION_MODES else "auto",
             idempotency_key,
             status,
+            dedupe_title=dedupe_title,
         )
         self.store.promote_dependencies(root)
         self._snapshot(root)
@@ -574,6 +579,24 @@ class TasksFeature:
     # ------------------------------------------------------------------
     # AI specification and execution lanes
     # ------------------------------------------------------------------
+    def _persona(self, task: dict, root: str) -> str:
+        """Vai của trợ lý được giao việc (khoá `agent:<mã>:<slug>:...`). Lỗi hay không có thì rỗng: việc vẫn chạy.
+
+        Truyền cả MÃ trợ lý đọc từ khoá: slug có thể đã được dùng lại cho một trợ lý mới (xoá rồi tạo lại), và việc
+        giao cho trợ lý cũ không được mang vai của trợ lý mới. Bên cấp vai kiểm slug còn thuộc đúng mã đó."""
+        if not self.deps.agent_persona:
+            return ""
+        key = str(task.get("idempotency_key") or "")
+        if not key.startswith("agent:"):
+            return ""
+        parts = key[len("agent:"):].split(":")
+        if len(parts) < 3 or not parts[0] or not parts[1]:
+            return ""
+        try:
+            return str(self.deps.agent_persona(root, parts[1], parts[0]) or "")
+        except Exception:
+            return ""
+
     def _base_cli(
         self,
         task: dict,
@@ -582,8 +605,12 @@ class TasksFeature:
         tag_suffix: str,
     ):
         root = str(task["brain_root"])
+        system_prompt = self.deps.build_system_prompt(root)
+        persona = self._persona(task, root)
+        if persona:
+            system_prompt = system_prompt + "\n\n" + persona
         cli = claude_engine(
-            system_prompt=self.deps.build_system_prompt(root),
+            system_prompt=system_prompt,
             cwd=root,
             tag=f"dispatch:{task['id']}:{tag_suffix}",
             allowed_tools=allowed_tools,
@@ -1555,6 +1582,14 @@ Trả DUY NHẤT một dòng JSON, không markdown:
                 if not self.store.move(id, "ready", "operator run"):
                     return {"ok": False, "error": localefmt.chu("task đang chạy", "task is running")}
             started = await self._claim_and_spawn(id)
+            if not started:
+                # 0.142.0: mỗi trợ lý chạy một việc giao trực tiếp một lúc; nói rõ vì sao chưa chạy thay vì ok:false trơn.
+                busy = bool(_agent_prefix(task.get("idempotency_key")))
+                return {"ok": False, "started": False, "id": id, "error": localefmt.chu(
+                    "Chưa chạy ngay được: trợ lý này đang làm một việc khác, việc sẽ tự chạy khi xong" if busy
+                    else "Chưa chạy ngay được: hàng việc đang đầy, việc sẽ tự chạy khi có chỗ",
+                    "Could not start now: this assistant is already running a job; it will start when that one ends" if busy
+                    else "Could not start now: the job queue is full; it will start when a slot frees up")}
             return {"ok": started, "started": started, "id": id}
 
         @router.post("/kanban/task/retry")
