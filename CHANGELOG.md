@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.141.0] - 2026-10-14
+### Cải thiện
+- **Bot Zalo xem được ảnh trong tin được quote.** Quote (trả lời) một ảnh rồi tag bot "xem ảnh này" là bot nhìn đúng ảnh đó. Trước đây bot chỉ nhận chữ và nói không thấy ảnh, phải gửi lại ảnh rồi tag trong 3 phút.
+- Chạy ở cả nhóm lẫn chat riêng, và cả khi bạn bấm "Trả lời giúp" ở Hộp thư. Ảnh phải là ảnh Javis đã đọc được lúc nó được gửi, tức gửi sau khi tài khoản Zalo đã kết nối.
+
 ## [0.140.0] - 2026-10-14
 ### Thêm mới
 - **Trang Nhóm: nhiều trợ lý trong một khung chat**, như nhóm Zalo. Nhắn chung thì trưởng nhóm trả lời, gõ @ để hỏi riêng một người. Bật **Giao việc** thì trưởng nhóm chia việc cho cả nhóm, tiến độ và kết quả hiện ngay trong chat.
