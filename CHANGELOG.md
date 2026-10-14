@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.151.0] - 2026-10-15
+### Cải thiện
+- **Kéo đổi bề rộng khung:** ở trang đồ thị (cột thư mục và khung hội thoại) và trang Trò chuyện (cột Hội thoại), rê chuột vào đường biên rồi kéo; nhấp đúp để về mặc định. Bề rộng được nhớ cho lần sau.
+- **Trang Chatbot hiện số tin của từng cuộc hội thoại** (viên xám, vd. "12 tin"), nằm cạnh số đỏ là số tin chưa đọc.
+
 ## [0.147.0] - 2026-10-14
 ### Cải thiện
 - **Việc chạy ngầm chỉ còn một dòng gọn trên khung chat.** Trước đây khối "việc đang chạy ngầm" chiếm ba dòng, kèm nút và hàng chip, tên việc còn bị cắt giữa chừng. Giờ chỉ còn một viên nhỏ: chấm xanh, tên việc quan trọng nhất (ưu tiên việc bạn vừa giao ở hội thoại này) và "+2" nếu còn việc khác.

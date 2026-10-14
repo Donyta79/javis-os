@@ -8,6 +8,11 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.151.0] - 2026-10-15
+### Improved
+- **Resizable panels:** on the graph page (folder column and chat panel) and the Chat page (conversation list), hover the edge and drag; double-click to reset. The width is remembered.
+- **The Chatbot inbox shows each conversation's message count** (grey pill, e.g. "12 msgs"), next to the red unread count.
+
 ## [0.147.0] - 2026-10-14
 ### Improved
 - **Background jobs now take one tidy line above the chat box.** The old "running in the background" block took three lines with a button and a row of chips, and cut job names off mid-word. Now it is one small pill: a green dot, the most relevant job (the one you just assigned in this chat first) and "+2" when more are running.
