@@ -6,6 +6,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.169.0] - 2026-10-15
+### Thêm mới
+- **Trợ lý tự điều nhịp:** trợ lý bật Auto tự xem lại việc của mình theo nhịp từ 15 phút tới 1 tháng. Được khen, được dùng kết quả thì nhanh dần (mặc định tối đa 1 giờ, chỉ bạn nâng được), ít ai cần thì chậm dần rồi ngủ; gọi trực tiếp là thức ngay. Việc được giao, hạn chót và mục tiêu không bao giờ bị chậm.
+- **Trợ lý tự biết lúc nên lên tiếng:** khi không ai gọi, mỗi trợ lý tự cân nhắc nói, chờ hay im; mỗi tin tối đa một người tự lên tiếng. Lời gọi @ và việc giao luôn được trả lời. Bạn sửa được từng quyết định ("Đáng lẽ nên nói", "Nên im") và trợ lý học theo đúng nhóm đó.
+- **Học từ phản hồi và đồng đội:** trợ lý xem lại cảm xúc bạn thả rồi giữ cách làm, hỏi lại, gửi bản sửa hoặc rút bài học. Bài học theo từng nhóm hay chat riêng, không rò sang nơi khác; đồng đội góp ý được cho nhau. Thu hồi bài học ngay trên thẻ trợ lý.
+- **Bảng Nhịp trên thẻ trợ lý và dòng thành viên nhóm:** trạng thái từng nơi, lần xem xét gần nhất và tiếp theo, vì sao đổi nhịp, các quyết định nói/chờ/im, bài học, đề xuất việc (nhận hay bác) và số lượt tự làm mỗi ngày.
+
 ## [0.168.0] - 2026-10-15
 ### Thêm mới
 - **Thả cảm xúc lên câu trả lời ở chat riêng:** sáu emoji như chat nhóm, có ở trang Trò chuyện và trang Cộng sự, hiện ngay khi câu trả lời vừa lưu, F5 vẫn còn, tab khác cũng thấy. Tin báo của mục tiêu cũng dùng sáu cảm xúc này, thay hàng Hữu ích / Chưa ổn.

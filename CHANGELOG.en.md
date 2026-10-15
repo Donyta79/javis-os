@@ -8,6 +8,13 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.169.0] - 2026-10-15
+### Added
+- **Assistants pace themselves:** an assistant with Auto on reviews its own work on a rhythm from 15 minutes to 1 month. Praise and used results make it faster (up to 1 hour by default, only you can raise it); little demand makes it slower until it sleeps; a direct call wakes it at once. Assigned jobs, deadlines and goals are never slowed down.
+- **Assistants judge when to speak:** when nobody calls them, each assistant weighs speaking, waiting or staying quiet; at most one volunteers per message. @ calls and assigned jobs are always answered. You can correct each decision ("Should have spoken", "Should stay quiet") and the assistant learns for that team only.
+- **Learning from feedback and teammates:** an assistant reviews the reactions you leave and keeps its approach, asks back, sends a revision or records a lesson. Lessons are scoped to a team or a private chat and never leak elsewhere; teammates can give each other feedback. Revoke a lesson right on the assistant card.
+- **Pulse panel on assistant cards and team member rows:** state per place, last and next review, why the pace changed, speak/wait/quiet decisions, lessons, work proposals (accept or reject) and autonomous turns per day.
+
 ## [0.168.0] - 2026-10-15
 ### Added
 - **React to replies in private chat:** the same six emoji as team chat, on the Chat and Partners pages, available as soon as a reply is saved, kept after a reload and shown in other tabs. Goal reports use the same six emoji instead of the Helpful / Not quite row.

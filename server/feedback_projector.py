@@ -93,8 +93,11 @@ class FeedbackProjector:
     def __init__(self, *, resonance: Callable[[], Any], sessions: Optional[Callable[[], Any]] = None,
                  teams: Optional[Callable[[], Any]] = None,
                  team_view: Optional[Callable[[str, str, int], Optional[dict]]] = None,
-                 clock: Callable[[], float] = time.time):
+                 clock: Callable[[], float] = time.time,
+                 judge_label: Optional[Callable[..., Any]] = None):
         self._resonance = resonance
+        # T3 phần J (0.156.0): `agent_judge.label` (trục nói/im của reaction dạy bộ phán xử). None: chỉ lưu như T2.
+        self._judge_label = judge_label
         self._sessions = sessions or (lambda: None)
         self._teams = teams or (lambda: None)
         self._team_view = team_view
@@ -102,10 +105,143 @@ class FeedbackProjector:
 
     # ───────────── điểm nối cho T3 ─────────────
 
-    def record_pulse_signal(self, kind: str, log_row: dict, agent_key: str, context_ref: str) -> None:
-        """Điểm nối CỐ Ý để trống cho T3: ghi tín hiệu hữu ích (`pulse_signals`, UNIQUE `(source_ref, agent_key)`) của
-        một reaction hợp lệ. T2 không ghi gì (chưa có ước lượng hữu ích)."""
-        return None
+    def record_pulse_signal(self, kind: str, log_row: dict, agent_key: str, context_ref: str) -> Optional[dict]:
+        """T3 (thiết kế 6.1, 6.3, 6.5): ghi tín hiệu hữu ích (`pulse_signals`, UNIQUE `(source_ref, agent_key)`) của một
+        reaction HỢP LỆ của chủ (Cộng hưởng bật, sau `resumed_at`; bộ chiếu đã lọc trước khi gọi) rồi đánh thức nhịp của
+        agent ở ngữ cảnh đó (`min(bậc, B3)`). Lý do chất lượng thắng emoji; chỉ trục nói/im hay chỉ góp ý thì không có tín
+        hiệu (vẫn thức). Reaction trên BẢN TỔNG HỢP của việc nhóm được phân bổ theo tập đầu vào host đã ghi cho bước tổng
+        hợp (`team_steps.input_refs`); tác giả tổng hợp không có thêm tín hiệu trực tiếp riêng. Idempotent. Lỗi kho nhịp
+        không làm hỏng lần chiếu (nuốt, ghi log). Trả {"signal": bool, "alloc": {...}} hay None."""
+        try:
+            return self._record_pulse_signal(kind, log_row, agent_key, context_ref)
+        except Exception as ex:  # noqa: BLE001
+            log.warning("pulse signal %s %s: %s: %s", kind, log_row.get("id"), type(ex).__name__, ex)
+            return None
+
+    def _record_pulse_signal(self, kind: str, log_row: dict, agent_key: str, context_ref: str) -> Optional[dict]:
+        res = self._resonance()
+        if res is None or not agent_key or str(log_row.get("source_kind") or "owner") != "owner":
+            return None
+        import agent_pulse as AP
+        nxt = self._next_state(kind, log_row)
+        if nxt is None:
+            return None
+        src = source_ref(kind, log_row["id"])
+        value, reasons = nxt.get("value"), list(nxt.get("reasons") or [])
+        sig = AP.reaction_signal(value, reasons)
+        at = float(log_row.get("created_at") or self.clock())
+        subject = f"{kind}:{log_row['session_id']}:{int(log_row['message_id'])}"
+        reactor = str(log_row.get("reactor") or "owner")
+        out = {"signal": False, "alloc": {}}
+        if sig is not None:
+            chain = self._synthesis_inputs(log_row) if kind == "team" else None
+            if chain is not None:
+                out["alloc"] = AP.record_contrib(res, source_ref=src, result_ref=chain[0], synth=agent_key,
+                                                 inputs=chain[1], context_ref=context_ref, value=value, reasons=reasons,
+                                                 reactor=reactor, at=at, subject_ref=subject, signal=sig)
+                out["signal"] = bool(out["alloc"])
+            else:
+                out["signal"] = AP.record_reaction(res, source_ref=src, agent_key=agent_key, context_ref=context_ref,
+                                                   value=value, reasons=reasons, reactor=reactor, at=at,
+                                                   subject_ref=subject)
+                out["alloc"] = {agent_key: 1.0}
+        AP.wake(res, agent_key, context_ref, "reaction", at=at)
+        return out
+
+    def _synthesis_inputs(self, log_row: dict) -> Optional[tuple]:
+        """Tin được phản hồi là kết quả của một bước `synthesize`: (result_ref, [agent của từng mục trong tập đầu vào host
+        đã đưa cho bước đó]). Chỉ một tầng: trích dẫn, chuyển tiếp, tổng hợp nhiều tầng không nhân điểm. Không phải bản
+        tổng hợp: None."""
+        tm = self._teams()
+        task_id = log_row.get("task_id")
+        if tm is None or not task_id:
+            return None
+        steps = tm.steps(task_id)
+        mid = int(log_row["message_id"])
+        synth = next((s for s in steps if s.get("kind") == "synthesize" and s.get("result_msg_id") == mid), None)
+        if synth is None:
+            return None
+        by_msg = {s.get("result_msg_id"): s for s in steps if s.get("result_msg_id") and s is not synth}
+        inputs = [by_msg[ref]["agent_key"] for ref in (synth.get("input_refs") or []) if ref in by_msg]
+        return f"step:{synth['step_id']}", inputs
+
+    def record_task_event(self, event: str, *, context_ref: str, agents: dict, source_ref_: str,
+                          subject_ref: str = "", wake_why: str = "") -> list:
+        """Tín hiệu từ sự kiện host của việc (chấp nhận đề xuất, chốt quyết định, sửa yêu cầu sau kết quả, huỷ), chỉ cho
+        agent đang bật Cộng hưởng. `agents`: {agent_key: share}. Lỗi kho không làm hỏng thao tác của chủ (nuốt, ghi log)."""
+        try:
+            res = self._resonance()
+            if res is None or not agents:
+                return []
+            import agent_pulse as AP
+            on = {}
+            for key, share in agents.items():
+                a = res.agent_any(key) if key else None
+                if a and a.get("status") == "active" and a.get("enabled") and share > 0:
+                    on[key] = float(share)
+            if not on:
+                return []
+            total = sum(on.values())
+            on = {k: v / total for k, v in on.items()}
+            done = AP.record_host_event(res, event=event, source_ref=source_ref_, agents=on, context_ref=context_ref,
+                                        subject_ref=subject_ref)
+            if wake_why:
+                for key in on:
+                    AP.wake(res, key, context_ref, wake_why)
+            return done
+        except Exception as ex:  # noqa: BLE001
+            log.warning("pulse task event %s %s: %s: %s", event, source_ref_, type(ex).__name__, ex)
+            return []
+
+    def pulse_wake(self, agent_key: str, context_ref: str, why: str) -> bool:
+        """Thức lại nhịp lớp 3 (5.2) khi chủ gọi trực tiếp hay giao việc mới. Tạm dừng, tắt: không đổi gì. Lỗi nuốt."""
+        try:
+            res = self._resonance()
+            if res is None or not agent_key:
+                return False
+            import agent_pulse as AP
+            return AP.wake(res, agent_key, context_ref, why)
+        except Exception as ex:  # noqa: BLE001
+            log.warning("pulse wake %s %s: %s", agent_key, context_ref, ex)
+            return False
+
+    def pulse_proposal_decided(self, context_ref: str, message_id: int, decision: str, task_id: str = "") -> None:
+        """Thẻ đề xuất trong nhóm do lượt quét tạo được chủ quyết ở thẻ: cập nhật sổ đề xuất của nhịp (không ghi tín hiệu
+        lần hai: thẻ nhóm đã ghi theo nguồn của nó)."""
+        try:
+            res = self._resonance()
+            if res is None:
+                return
+            import agent_pulse as AP
+            prop = AP.proposal(res, context_ref=context_ref, message_id=int(message_id))
+            if prop is not None and prop["status"] == "pending":
+                AP.decide_proposal(res, prop["id"], decision, by="owner", task_id=task_id, signal=False)
+        except Exception as ex:  # noqa: BLE001
+            log.warning("pulse proposal %s %s: %s", context_ref, message_id, ex)
+
+    def void_task_event(self, source_ref_: str) -> None:
+        """Chủ gỡ một sự kiện đã ghi (bỏ ghim quyết định): tín hiệu của nguồn đó thành `void`."""
+        try:
+            res = self._resonance()
+            if res is not None:
+                import agent_pulse as AP
+                AP.void_signal(res, source_ref_)
+        except Exception as ex:  # noqa: BLE001
+            log.warning("pulse void %s: %s", source_ref_, ex)
+
+    def record_judge_label(self, kind: str, log_row: dict, agent_key: str, axis: str) -> Optional[dict]:
+        """T3 phần J: trục "Đáng lẽ nên nói" / "Nên im (chen ngang)" của reaction CỦA CHỦ trên tin của agent tới
+        `agent_judge.label` (nguồn `reaction`, thời điểm là lúc thả). Trục trống là bỏ nhãn do reaction đặt (nhãn chủ sửa
+        trong lịch sử quyết định giữ nguyên). Bộ phán xử tự quyết hiệu lực: chỉ dịch ngưỡng khi Cộng hưởng bật và nhãn sau
+        `resumed_at`; không có quyết định nào sinh ra tin này (lời trả lời trực tiếp ở chat riêng) thì không làm gì."""
+        if self._judge_label is None or not agent_key:
+            return None
+        try:
+            return self._judge_label(f"msg:{int(log_row['message_id'])}", axis or None, "owner",
+                                     at=float(log_row.get("created_at") or self.clock()), source="reaction")
+        except Exception as ex:  # noqa: BLE001 - nhãn phán xử hỏng không được làm hỏng việc chiếu reaction
+            log.warning("feedback projector judge label %s failed: %s: %s", kind, type(ex).__name__, ex)
+            return None
 
     # ───────────── kho ─────────────
 
@@ -190,6 +326,8 @@ class FeedbackProjector:
             return []
         older = [x["id"] for x in pair[:-1]]
         refs = self._apply(kind, newest, older)
+        # T3 (6.3): đổi hay bỏ reaction thì tín hiệu của các lần cũ cùng cặp chuyển `superseded_by` lần mới nhất.
+        self._supersede_signals(kind, newest, older)
         # Đổi hay bỏ: nguồn cũ của cùng cặp trong lý do còn chờ bị gỡ SAU khi nguồn mới đã vào (lý do không bị chốt
         # `superseded` giữa chừng chỉ vì đang thay nguồn).
         self._drop_old(kind, newest, older)
@@ -223,6 +361,8 @@ class FeedbackProjector:
         goal_id = str(row.get("goal_id") or "") if kind == "dm" else ""
         res = self._resonance() if (agent_key or goal_id) else None
         nxt = self._next_state(kind, row)
+        if str(row.get("source_kind") or "owner") == "owner" and agent_key:
+            self.record_judge_label(kind, row, agent_key, str((nxt or {}).get("axis") or ""))
         if nxt is None:
             return {"route": "cleared", "source_ref": src, "removed": old_refs}
         source_kind = str(row.get("source_kind") or "owner")
@@ -263,6 +403,20 @@ class FeedbackProjector:
         self._sync_one(kind, row, refs)
         return refs
 
+    def _supersede_signals(self, kind: str, row: dict, older_ids: list) -> None:
+        if not older_ids:
+            return
+        try:
+            res = self._resonance()
+            if res is None:
+                return
+            import agent_pulse as AP
+            by = source_ref(kind, row["id"])
+            for oid in older_ids:
+                AP.supersede_signal(res, source_ref(kind, oid), by)
+        except Exception as ex:  # noqa: BLE001
+            log.warning("pulse supersede %s %s: %s", kind, row.get("id"), ex)
+
     def _drop_old(self, kind: str, row: dict, older_ids: list) -> list:
         """Gỡ nguồn của các lần đổi cũ hơn của cùng cặp khỏi lý do còn chờ (lớp 3) và lý do `feedback` còn chờ (A2)."""
         if not older_ids:
@@ -284,8 +438,9 @@ class FeedbackProjector:
 
     # ───────────── trạng thái hiển thị ─────────────
 
-    def _status_for(self, refs: dict) -> Optional[tuple]:
-        """(status, status_reason) theo trạng thái lý do thật; None khi không đổi gì."""
+    def _status_for(self, refs: dict, prefetched: Optional[dict] = None) -> Optional[tuple]:
+        """(status, status_reason) theo trạng thái lý do thật; None khi không đổi gì. `prefetched`: {source_ref: nguồn}
+        đã đọc theo lô (đối soát của nhịp); nguồn vắng trong đó nghĩa là không có."""
         res = self._resonance()
         if res is None:
             return None
@@ -299,8 +454,11 @@ class FeedbackProjector:
                                          "The goal read this feedback on its next work turn")
             return None
         if route == "l3":
-            from agent_ledger import WakeReasons
-            s = WakeReasons(res).source(refs.get("source_ref") or "")
+            if prefetched is not None:
+                s = prefetched.get(refs.get("source_ref") or "")
+            else:
+                from agent_ledger import WakeReasons
+                s = WakeReasons(res).source(refs.get("source_ref") or "")
             if s is None or s.get("removed_at") is not None:
                 return None
             rs = s.get("reason_status")
@@ -316,11 +474,13 @@ class FeedbackProjector:
             return None
         return None
 
-    def _sync_one(self, kind: str, row: dict, refs: dict) -> Optional[dict]:
-        got = self._status_for(refs)
+    def _sync_one(self, kind: str, row: dict, refs: dict, *, cur: Any = None,
+                  prefetched: Optional[dict] = None) -> Optional[dict]:
+        got = self._status_for(refs, prefetched)
         if got is None:
             return None
-        cur = self._reaction(kind, row)
+        if cur is None:
+            cur = self._reaction(kind, row)
         if cur is None or int(cur.get("log_id") or 0) != int(row["id"]):
             return None
         # Trạng thái do lượt xem xét thật ghi (T3: adjusted/no_change kèm lý do) không bị bộ chiếu ghi đè bằng mặc định.
@@ -346,6 +506,88 @@ class FeedbackProjector:
                 log.warning("feedback projector refresh %s %s: %s", kind, lid, ex)
         return events
 
+    # ───────────── điểm nối cho lượt xem xét reaction (T3 phần L, `agent_review`) ─────────────
+
+    def review_source(self, src: str) -> Optional[dict]:
+        """Một nguồn `rx:<kind>:<log_id>` của lý do `reaction_review`, đủ để dựng lời nhắc: tin bị phản hồi, emoji, lý do,
+        trục nói/im, góp ý. `current`: lần đổi này còn là trạng thái hiện tại của reaction (đổi sau đó thì không). None
+        khi nguồn không đọc được (kho chưa có, dòng đã mất)."""
+        m = re.match(r"^rx:(dm|team):(\d+)$", str(src or ""))
+        if not m:
+            return None
+        kind, log_id = m.group(1), int(m.group(2))
+        row = self._log_row(kind, log_id)
+        if row is None:
+            return None
+        nxt = self._next_state(kind, row) or {}
+        cur = self._reaction(kind, row)
+        text = ""
+        ss = self._sessions()
+        if ss is not None:
+            msg = (ss.message_row(row["session_id"], int(row["message_id"])) if kind == "dm"
+                   else ss.team_message(row["session_id"], int(row["message_id"])))
+            text = str((msg or {}).get("content") or "")
+        return {"source_ref": src, "kind": kind, "log_id": log_id, "session_id": row["session_id"],
+                "message_id": int(row["message_id"]), "reactor": row["reactor"], "team_id": row.get("team_id") or "",
+                "agent_key": str(row.get("agent_key") or ""), "value": nxt.get("value"),
+                "reasons": list(nxt.get("reasons") or []), "axis": nxt.get("axis") or "",
+                "comment": nxt.get("comment") or "", "created_at": row.get("created_at"), "message_text": text,
+                "current": bool(cur and int(cur.get("log_id") or 0) == log_id),
+                "status": (cur or {}).get("status") or ""}
+
+    def set_review_status(self, src: str, status: str, reason: str = "") -> list:
+        """Lượt xem xét reaction ghi trạng thái theo KẾT QUẢ HOST THẬT lên reaction của nguồn (chỉ khi reaction còn ở đúng
+        lần đổi đó). Trả gói WS cần đẩy (`chat_reaction` / `team_message`)."""
+        m = re.match(r"^rx:(dm|team):(\d+)$", str(src or ""))
+        if not m:
+            return []
+        kind, log_id = m.group(1), int(m.group(2))
+        row = self._log_row(kind, log_id)
+        if row is None:
+            return []
+        got = self._set_status(kind, row, log_id, status, reason)
+        if got is None:
+            return []
+        ev = self._event(kind, row)
+        return [ev] if ev else []
+
+    def _refresh_open(self, kind: str, st: Any, limit: int) -> Optional[list]:
+        """Đối soát trạng thái của các reaction đang chờ/đang xem xét THEO LÔ (T3 hiệu năng): một câu đọc reaction, một câu
+        đọc nhật ký, một câu đọc nguồn lý do, rồi CHỈ ghi những reaction có trạng thái lý do đổi. Trước đây mỗi nhịp 30
+        giây đọc lại từng dòng (ba kết nối SQLite mỗi dòng, tối đa 200 dòng) dù không có gì đổi. None khi kho không có
+        hàm đọc theo lô (kho giả của test cũ): người gọi dùng đường từng dòng."""
+        open_rows = getattr(st, "dm_open_reaction_rows" if kind == "dm" else "open_reaction_rows", None)
+        log_rows = getattr(st, "dm_reaction_log_rows" if kind == "dm" else "reaction_log_rows", None)
+        if open_rows is None or log_rows is None:
+            return None
+        res = self._resonance()
+        if res is None:
+            return []
+        reactions = [r for r in open_rows(OPEN_STATUSES, limit) if r.get("log_id") is not None]
+        if not reactions:
+            return []
+        logs = log_rows([int(r["log_id"]) for r in reactions])
+        todo = []
+        for cur in reactions:
+            row = logs.get(int(cur["log_id"]))
+            if row is None or row.get("effect_state") != "done":
+                continue
+            todo.append((row, cur, row.get("effect_refs") or {}))
+        refs_l3 = [refs.get("source_ref") for _r, _c, refs in todo if refs.get("route") == "l3"]
+        from agent_ledger import WakeReasons
+        W = WakeReasons(res)
+        prefetched = W.sources_by_ref(refs_l3) if hasattr(W, "sources_by_ref") else None
+        events = []
+        for row, cur, refs in todo:
+            try:
+                if self._sync_one(kind, row, refs, cur=cur, prefetched=prefetched) is not None:
+                    ev = self._event(kind, row)
+                    if ev:
+                        events.append(ev)
+            except Exception as ex:  # noqa: BLE001
+                log.warning("feedback projector refresh %s %s: %s", kind, row.get("id"), ex)
+        return events
+
     def project_pending(self, limit: int = 200) -> list:
         """Nhịp và lúc khởi động: chiếu mọi dòng còn `pending` (theo thứ tự mã nhật ký), rồi ghi ngược trạng thái của
         các reaction đang chờ hay đang xem xét. Kho nào chưa có thì bỏ qua."""
@@ -363,6 +605,10 @@ class FeedbackProjector:
                         continue
                     done.add(pair)
                     events.extend(self.project(kind, row["id"]))
+                bulk = self._refresh_open(kind, st, limit)
+                if bulk is not None:
+                    events.extend(bulk)
+                    continue
                 open_ids = (st.dm_open_reaction_logs(OPEN_STATUSES, limit) if kind == "dm"
                             else st.open_reaction_logs(OPEN_STATUSES, limit))
                 events.extend(self.refresh(kind, open_ids))
