@@ -22460,9 +22460,23 @@ class _TeamAdmin:
             _write_md(path, meta, prompt)
 
     def set_resonance(self, root, slug, on, by):
+        """Lệnh `set_resonance` của trưởng nhóm Toàn quyền. Bộ chạy đã kiểm luật (trợ lý do CHÍNH nhóm quản lý, dưới dòng
+        Toàn quyền ghim cho lượt, `team_runner._apply_admin`). Bật thì đánh thức mục tiêu của trợ lý NGAY, đúng như route
+        bật của chủ (`POST /resonance/agents/toggle`), thay vì để chờ lần kiểm lại `agent_recheck` tới 6 giờ (GOAL T1)."""
         if on and _agent_md_path(root, slug) is None:
             raise FileNotFoundError(slug)
-        _resonance_store().agent_set_enabled(resonance_store.Principal("owner", by, _brain_key(root)), slug, bool(on))
+        store = _resonance_store()
+        brain = _brain_key(root)
+        a = store.agent_set_enabled(resonance_store.Principal("owner", by, brain), slug, bool(on))
+        if on and a is not None:
+            # Auto ĐÃ bật và đã ghi; đánh thức lỗi không được biến cả lệnh thành "chưa áp dụng" (review T1 #5). Trả lỗi
+            # đánh thức để bộ chạy ghi nhật ký nhóm; lần kiểm lại agent_recheck vẫn đánh thức sau.
+            try:
+                store.wake_agent_goals(brain, a["agent_key"])
+            except Exception as ex:  # noqa: BLE001
+                print(f"[team set_resonance wake] {slug}: {type(ex).__name__}: {ex}", file=sys.stderr)
+                return {"enabled": True, "wake_error": f"{type(ex).__name__}: {str(ex)[:200]}"}
+        return {"enabled": bool(on) and a is not None}
 
 
 async def _team_notify(session_id, text):

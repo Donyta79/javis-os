@@ -40,16 +40,28 @@
     work: "teams.role.work", help: "teams.role.help", synthesize: "teams.role.synthesize" };
   // Khoá viết TRỌN (không ghép chuỗi) để bộ kiểm i18n đọc được từng khoá đang dùng.
   var STATUS_KEY = { done: "teams.status.done", late_cancelled: "teams.status.late_cancelled", late: "teams.status.late",
-    old_revision: "teams.status.old_revision", member_left: "teams.status.member_left", leader_changed: "teams.status.leader_changed" };
+    old_revision: "teams.status.old_revision", member_left: "teams.status.member_left", leader_changed: "teams.status.leader_changed",
+    lease_lost: "teams.status.lease_lost" };
   var TEAM_STATUS_KEY = { active: "teams.status_active", paused: "teams.status_paused", archived: "teams.status_archived" };
   var BLOCK_KEY = { failed: "teams.block.failed", interrupted: "teams.block.interrupted", no_leader: "teams.block.no_leader",
     assignee_removed: "teams.block.assignee_removed", no_progress: "teams.block.no_progress", cap_reached: "teams.block.cap_reached",
     agent_busy_long: "teams.block.agent_busy_long", waiting_user: "teams.block.waiting_user", cancelled: "teams.block.cancelled" };
   var CAP_KEY = { task_turns: "teams.cap.task_turns", task_steps: "teams.cap.task_steps", daily_turns: "teams.cap.daily_turns",
-    mentions: "teams.cap.mentions" };
+    mentions: "teams.cap.mentions", help_depth: "teams.cap.help_depth", busy_wait_s: "teams.cap.busy_wait_s" };
   var TAB_KEY = { jobs: "teams.tab_jobs", team: "teams.tab_team" };
-  var LATE = ["late_cancelled", "late", "old_revision", "member_left", "leader_changed"];
-  var CAP_FIELDS = ["task_turns", "task_steps", "daily_turns", "mentions"];
+  var LATE = ["late_cancelled", "late", "old_revision", "member_left", "leader_changed", "lease_lost"];
+  // Trần chủ nhóm chỉnh được (team_store.OWNER_CAPS). Bốn trần đầu có "Không giới hạn" (lưu null, GOAL T1 mục 9).
+  var CAP_FIELDS = ["task_turns", "task_steps", "help_depth", "daily_turns", "mentions", "busy_wait_s"];
+  var OWNER_UNL = ["task_turns", "task_steps", "help_depth", "daily_turns"];
+  // Bảng giới hạn (GOAL T1 mục 9): bốn nhóm theo ai đổi được, nhãn từng dòng. Khoá viết trọn cho bộ kiểm i18n.
+  var LIMIT_CATS = [{ id: "owner", key: "teams.limits.owner" }, { id: "leader", key: "teams.limits.leader" },
+    { id: "server", key: "teams.limits.server" }, { id: "provider", key: "teams.limits.provider" }];
+  var LIMIT_KEY = { running_jobs: "teams.limits.running_jobs", max_parallel_teams: "teams.limits.max_parallel_teams",
+    agent_one_turn: "teams.limits.agent_one_turn", busy_lease: "teams.limits.busy_lease", no_progress: "teams.limits.no_progress",
+    turn_timeout: "teams.limits.turn_timeout", step_timeout: "teams.limits.step_timeout",
+    admin_ops_per_turn: "teams.limits.admin_ops_per_turn", history_window: "teams.limits.history_window",
+    text_only: "teams.limits.text_only", server_call_ceiling: "teams.limits.server_call_ceiling",
+    provider_quota: "teams.limits.provider_quota", account: "teams.limits.account" };
   // Toàn quyền (T3, spec 13): trần trưởng nhóm đổi được trong trần trần của chủ.
   var AUTH_CAPS = ["task_turns", "task_steps", "help_depth", "daily_turns"];
   var AUTH_CAP_KEY = { task_turns: "teams.cap.task_turns", task_steps: "teams.cap.task_steps",
@@ -298,6 +310,7 @@
     member_left: "teams.reply.why.member_left", restart: "teams.reply.why.restart",
     interrupted: "teams.reply.why.interrupted", internal: "teams.reply.why.internal",
     leader_changed: "teams.reply.why.leader_changed", superseded: "teams.reply.why.superseded",
+    lease_lost: "teams.reply.why.lease_lost",
     timeout: "teams.reply.why.timeout", auth: "teams.reply.why.auth", no_leader: "teams.reply.why.no_leader" };
   var STUCK_QUEUED_S = 600;   // khớp team_store.STUCK_QUEUED_S: chờ lâu hơn thì cho Thử lại
   var LEADER_SLOT = "__leader__";   // khớp team_runner.LEADER_SLOT: tin thường gửi lúc nhóm chưa có điều phối
@@ -792,8 +805,13 @@
   function capsFormHtml(team) {
     var caps = team.caps || {};
     var capRows = CAP_FIELDS.map(function (k) {
-      return '<label class="tm-field tm-cap"><span>' + esc(tw(CAP_KEY[k])) + '</span><input type="number" min="0" name="tm-cap-' + k +
-        '" value="' + esc(caps[k] == null ? "" : caps[k]) + '"></label>';
+      var unl = OWNER_UNL.indexOf(k) >= 0;
+      var isUnl = unl && caps[k] === null;
+      // Trần có "Không giới hạn": ô tích riêng, null là không giới hạn (không thay bằng một số lớn).
+      return '<div class="tm-field tm-cap"><label class="tm-cap-num"><span>' + esc(tw(CAP_KEY[k])) + '</span><input type="number" min="0" name="tm-cap-' + k +
+        '" value="' + esc(caps[k] == null ? "" : caps[k]) + '"' + (isUnl ? " disabled" : "") + "></label>" +
+        (unl ? '<label class="tm-unl"><input type="checkbox" name="tm-cap-' + k + '-unl"' + (isUnl ? " checked" : "") + "> " +
+          esc(tw("teams.auth.unlimited")) + "</label>" : "") + "</div>";
     }).join("");
     return '<form class="tm-form tm-caps-form" onsubmit="return false"><div class="tm-qhead">' + esc(tw("teams.caps")) + "</div>" +
       // Trưởng nhóm đang được tự quyết: số trong hộp quyền đè số ở đây; nói rõ thay vì để "Đã lưu" mà không đổi gì.
@@ -803,6 +821,43 @@
 
   function capText(v) {
     return v === null || v === undefined ? tw("teams.auth.unlimited") : String(v);
+  }
+
+  function limitValue(x) {
+    if (x.unit === "rule") return "";
+    if (x.value === null || x.value === undefined) return tw("teams.auth.unlimited");
+    if (x.unit === "seconds") {
+      return x.value >= 60 && x.value % 60 === 0 ? tw("teams.limits.minutes", { n: x.value / 60 })
+        : tw("teams.limits.seconds", { n: x.value });
+    }
+    return String(x.value);
+  }
+
+  // Bảng MỌI giới hạn của nhóm (GOAL T1 mục 9), đọc từ `authority.limits` của máy chủ: chủ chỉnh được, trưởng nhóm chỉnh
+  // được khi có Toàn quyền, máy chủ cố định, nhà cung cấp quyết. Không có câu "bỏ mọi giới hạn".
+  function limitsHtml(team) {
+    var rows = (team.authority && team.authority.limits) || [];
+    if (!rows.length) return "";
+    var body = LIMIT_CATS.map(function (cat) {
+      var mine = rows.filter(function (x) { return x.category === cat.id; });
+      if (!mine.length) return "";
+      var note = "";
+      if (cat.id === "leader" && !mine[0].granted) note = tw("teams.limits.leader_off");
+      else if (cat.id === "leader" && mine.some(function (x) { return x.model_turns; })) note = tw("teams.limits.leader_model_note");
+      var items = mine.map(function (x) {
+        var label = tw(cat.id === "owner" || cat.id === "leader" ? (CAP_KEY[x.key] || AUTH_CAP_KEY[x.key]) : LIMIT_KEY[x.key]);
+        var v = cat.id === "leader" ? (!x.granted ? "" : x.editable ? tw("teams.limits.leader_max", { v: limitValue(x) })
+          : tw("teams.limits.leader_locked")) : limitValue(x);
+        var unl = cat.id === "owner" && x.unlimited_ok ? " (" + tw("teams.limits.unl_ok") + ")" : "";
+        return '<li class="tm-limit"><span class="tm-limit-k">' + esc(label) + "</span>" +
+          (v ? ': <span class="tm-limit-v">' + esc(v) + "</span>" : "") + esc(unl) + "</li>";
+      }).join("");
+      return '<div class="tm-limits-cat"><div class="tm-limits-head">' + esc(tw(cat.key)) + "</div>" +
+        (note ? '<div class="tm-limits-note">' + esc(note) + "</div>" : "") + '<ul class="tm-limits-list">' + items + "</ul></div>";
+    }).join("");
+    return '<section class="tm-limits" aria-label="' + esc(tw("teams.limits.title")) + '"><div class="tm-qhead">' +
+      esc(tw("teams.limits.title")) + '</div><div class="tm-limits-note">' + esc(tw("teams.limits.intro")) + "</div>" + body +
+      "</section>";
   }
 
   function capInputs(name, v) {
@@ -922,7 +977,7 @@
     var list = function (obj, label) {
       return Object.keys(obj).map(function (k) { return esc(label(k)) + " " + obj[k]; }).join(" · ");
     };
-    return '<div class="tm-turns"><div class="tm-qhead">' + esc(tw("teams.turns_today", { n: today, cap: (team.caps || {}).daily_turns })) + "</div>" +
+    return '<div class="tm-turns"><div class="tm-qhead">' + esc(tw("teams.turns_today", { n: today, cap: capText((team.caps || {}).daily_turns) })) + "</div>" +
       "<div>" + esc(tw("teams.turns_by_agent")) + ": " + list(byAgent, function (k) { return nameOf(team.members, k); }) + "</div>" +
       "<div>" + esc(tw("teams.turns_by_role")) + ": " + list(byRole, function (k) { return tw(k); }) + "</div>" +
       '<div class="tm-sub">' + esc(tw("teams.turns_note")) + "</div></div>";
@@ -941,7 +996,7 @@
       "><span>" + esc(tw("teams.pin_top")) + "</span></label>" + settingsFormHtml(team) + "</section>" +
       '<details class="tm-adv"' + (ui.advOpen ? " open" : "") + '><summary class="tm-adv-sum">' + esc(tw("teams.advanced")) +
       '</summary><div class="tm-sub">' + esc(tw("teams.advanced_note")) + "</div>" + capsFormHtml(team) + authorityHtml(team) +
-      turnsHtml(ui.turns || [], team) + "</details>";
+      limitsHtml(team) + turnsHtml(ui.turns || [], team) + "</details>";
   }
 
   // Băng báo gọn, kèm nút giải quyết khi có: tạm dừng thì Bật lại, chưa có trưởng nhóm thì Chọn.
@@ -2085,16 +2140,55 @@
     });
   }
 
-  function saveCaps() {
+  // Dựng thân POST /caps từ form (hàm thuần, test được dưới node). `read(k)` trả {checked: bool|null, value: chuỗi};
+  // checked null là trần không có ô Không giới hạn. Trả {caps, missing}: `missing` là trần vừa bỏ tích Không giới hạn mà
+  // chưa nhập số, khi đó KHÔNG gửi gì (review T1 #1: không báo "Đã lưu" khi không đổi gì).
+  function capsPayload(current, read) {
     var caps = {};
+    var missing = null;
     CAP_FIELDS.forEach(function (k) {
-      var v = val("tm-cap-" + k);
-      if (v !== "" && Number(v) !== Number((S.team.caps || {})[k])) caps[k] = Number(v);
+      var cur = (current || {})[k];
+      var f = read(k) || {};
+      if (f.checked === true) {
+        if (cur !== null) caps[k] = { unlimited: true };
+        return;
+      }
+      var v = f.value == null ? "" : String(f.value);
+      if (v === "" && cur === null && f.checked === false && !missing) missing = k;
+      if (v !== "" && (cur === null || Number(v) !== Number(cur))) caps[k] = Number(v);
     });
-    if (!Object.keys(caps).length) { setNote(tw("teams.saved")); return; }
-    call("POST", teamUrl("/caps"), { caps: caps }).then(function (r) {
-      if (r.code === 200) setNote(tw("teams.saved"));
-      act(r, drawSide);
+    return missing ? { caps: {}, missing: missing } : { caps: caps, missing: null };
+  }
+
+  // Luồng nút Lưu giới hạn, tách khỏi DOM để test được hành vi dưới node: `form.read(k)` đọc ô, `ui.note(text)`,
+  // `ui.focus(k)`, `ui.post(caps)` trả Promise. Thiếu số thì nhắc, đưa con trỏ vào ô đó và KHÔNG gửi (review T1 #1).
+  function saveCapsFlow(current, read, ui) {
+    var built = capsPayload(current, read);
+    if (built.missing) {
+      ui.note(tw("teams.cap_need_number", { name: tw(CAP_KEY[built.missing]) }));
+      ui.focus(built.missing);
+      return null;
+    }
+    if (!Object.keys(built.caps).length) { ui.note(tw("teams.saved")); return null; }
+    return ui.post(built.caps);
+  }
+
+  function saveCaps() {
+    saveCapsFlow(S.team.caps, function (k) {
+      var box = S.el.querySelector('[name="tm-cap-' + k + '-unl"]');
+      return { checked: box ? !!box.checked : null, value: val("tm-cap-" + k) };
+    }, {
+      note: setNote,
+      focus: function (k) {
+        var miss = S.el.querySelector('[name="tm-cap-' + k + '"]');
+        if (miss && miss.focus) miss.focus();
+      },
+      post: function (caps) {
+        return call("POST", teamUrl("/caps"), { caps: caps }).then(function (r) {
+          if (r.code === 200) setNote(tw("teams.saved"));
+          act(r, drawSide);
+        });
+      },
     });
   }
 
@@ -2121,7 +2215,7 @@
         function (r) { if (r && r.network) setNote(tw("teams.err_network")); else fail(r); });
       return;
     }
-    if (e.target.name && /^tm-auth-(cap|ceil)-[a-z_]+-unl$/.test(e.target.name)) {
+    if (e.target.name && /^tm-(auth-(cap|ceil)|cap)-[a-z_]+-unl$/.test(e.target.name)) {
       // Tích Không giới hạn thì ô số tắt (giá trị là null + cờ, không phải một số lớn).
       var num = S.el.querySelector('[name="' + e.target.name.slice(0, -4) + '"]');
       if (num) num.disabled = e.target.checked;
@@ -2305,7 +2399,7 @@
     jobStripHtml: jobStripHtml, blockedAction: blockedAction, jobsChip: jobsChip, jobsChipHtml: jobsChipHtml, timeShort: timeShort,
     mentionMatches: mentionMatches, mentionsFromText: mentionsFromText, mentionScan: mentionScan, removeMention: removeMention,
     callsHtml: callsHtml, foldName: foldName, emailBefore: emailBefore, composerHint: composerHint, newClientId: newClientId,
-    membersHtml: membersHtml, settingsFormHtml: settingsFormHtml, capsFormHtml: capsFormHtml, teamTabHtml: teamTabHtml,
+    membersHtml: membersHtml, settingsFormHtml: settingsFormHtml, capsFormHtml: capsFormHtml, capsPayload: capsPayload, saveCapsFlow: saveCapsFlow, teamTabHtml: teamTabHtml, limitsHtml: limitsHtml,
     levelOf: levelOf, grantFor: grantFor, teamAvatarHtml: teamAvatarHtml, savePin: savePin, pinTeamWith: pinTeamWith, noteHtml: noteHtml, levelsHtml: levelsHtml, turnsHtml: turnsHtml,
     bannersHtml: bannersHtml, reactionPickerHtml: reactionPickerHtml, reactionChipHtml: reactionChipHtml,
     nextReaction: nextReaction, REACTIONS: REACTIONS, authorityHtml: authorityHtml, readGrant: readGrant,

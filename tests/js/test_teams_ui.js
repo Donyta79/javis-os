@@ -633,5 +633,99 @@ check("khoá chữ ghim có ở vi và en", ["teams.pin_team", "teams.unpin_team
   await notes[0].retry();
   check("4f6268bd #2 bấm Thử lại gửi lại đúng thao tác; lần sau lưu được thì tải lại danh sách", calls === 2
         && notes.some(function (n) { return n.reloaded; }), JSON.stringify(notes));
+
+  // ───────────── GOAL T1 mục 9: Không giới hạn cho trần của chủ, bảng giới hạn trong Nâng cao ─────────────
+  const unlTeam = Object.assign({}, team, { caps: { task_turns: 12, task_steps: null, help_depth: 2, daily_turns: 100, mentions: 3,
+    busy_wait_s: 1800, running_jobs: 1, no_progress: 2 } });
+  const cf = TM.capsFormHtml(unlTeam);
+  check("GOAL T1 trần của chủ: bốn trần có ô Không giới hạn riêng (ngoài hộp Toàn quyền), @ và thời gian chờ thì không",
+        ["task_turns", "task_steps", "help_depth", "daily_turns"].every(function (k) { return cf.includes('name="tm-cap-' + k + '-unl"'); })
+        && !cf.includes('name="tm-cap-mentions-unl"') && !cf.includes('name="tm-cap-busy_wait_s-unl"')
+        && /name="tm-cap-task_steps" value="" disabled/.test(cf) && /name="tm-cap-task_steps-unl" checked/.test(cf)
+        && !cf.includes("tm-cap-running_jobs") && !cf.includes("tm-cap-no_progress"), cf);
+  check("GOAL T1 Không giới hạn dùng nhãn chung của i18n, số ngày Không giới hạn hiện bằng chữ ở sổ lượt",
+        cf.includes(vi["teams.auth.unlimited"]) && TM.turnsHtml([], Object.assign({}, unlTeam, { caps: { daily_turns: null } }))
+          .includes(vi["teams.auth.unlimited"]));
+  const limRows = [
+    { key: "task_turns", category: "owner", value: 12, unit: "count", unlimited_ok: true },
+    { key: "busy_wait_s", category: "owner", value: 1800, unit: "seconds", unlimited_ok: false },
+    { key: "task_turns", category: "leader", value: null, unit: "count", unlimited_ok: true, granted: true, editable: true, model_turns: true },
+    { key: "help_depth", category: "leader", value: null, unit: "count", unlimited_ok: true, granted: true, editable: false, model_turns: false },
+    { key: "running_jobs", category: "server", value: 1, unit: "count", unlimited_ok: false },
+    { key: "step_timeout", category: "server", value: 3600, unit: "seconds", unlimited_ok: false },
+    { key: "text_only", category: "server", value: null, unit: "rule", unlimited_ok: false },
+    { key: "provider_quota", category: "provider", value: null, unit: "rule", unlimited_ok: false }];
+  const lh = TM.limitsHtml(Object.assign({}, team, { authority: { authority: null, limits: limRows } }));
+  check("GOAL T1 bảng giới hạn: đủ bốn nhóm theo ai đổi được, có câu nói rõ không chế độ nào bỏ mọi giới hạn",
+        ["teams.limits.title", "teams.limits.intro", "teams.limits.owner", "teams.limits.leader", "teams.limits.server",
+          "teams.limits.provider"].every(function (k) { return lh.includes(vi[k]); }), lh);
+  check("GOAL T1 bảng giới hạn: giá trị đúng đơn vị, luật không có số thì chỉ có nhãn, Không giới hạn bằng chữ",
+        lh.includes(vi["teams.limits.minutes"].replace("{n}", "30")) && lh.includes(vi["teams.limits.minutes"].replace("{n}", "60"))
+        && lh.includes(vi["teams.limits.running_jobs"] + '</span>: <span class="tm-limit-v">1</span>')
+        && lh.includes(vi["teams.limits.text_only"] + "</span></li>")
+        && lh.includes(vi["teams.limits.leader_max"].replace("{v}", vi["teams.auth.unlimited"]))
+        && lh.includes(vi["teams.limits.leader_locked"]) && lh.includes(vi["teams.limits.leader_model_note"])
+        && lh.includes(vi["teams.limits.unl_ok"]), lh);
+  check("GOAL T1 bảng giới hạn: Quyền giới hạn thì nói trưởng nhóm chưa chỉnh được",
+        TM.limitsHtml(Object.assign({}, team, { authority: { limits: [{ key: "task_turns", category: "leader", value: null,
+          unit: "count", unlimited_ok: true, granted: false, editable: false }] } })).includes(vi["teams.limits.leader_off"]));
+  check("GOAL T1 bảng giới hạn nằm trong Nâng cao của tab Nhóm", TM.teamTabHtml(Object.assign({}, team,
+    { authority: { authority: null, limits: limRows } }), [], {}).includes('class="tm-limits"'));
+  check("GOAL T1 bảng giới hạn không có chữ nào hứa bỏ mọi giới hạn", !/bỏ mọi giới hạn|remove all limits/i.test(
+    Object.keys(vi).filter(function (k) { return k.indexOf("teams.limits.") === 0; }).map(function (k) { return vi[k] + " " + en[k]; }).join(" ")));
+  check("GOAL T1 khoá bảng giới hạn có ở cả vi và en", Object.keys(vi).filter(function (k) { return k.indexOf("teams.limits.") === 0; })
+    .every(function (k) { return en[k] && en[k] !== vi[k] || k === "teams.limits.minutes"; }) && vi["teams.cap.busy_wait_s"] && en["teams.cap.busy_wait_s"]);
+  check("GOAL T1 CSS: chữ bảng giới hạn và mục Nâng cao tối thiểu 16px", /\.tm-limits \{[^}]*font-size: 16px/.test(css)
+        && /\.tm-limits-list \{[^}]*font-size: 16px/.test(css) && /\.tm-adv \.tm-field, [^{]*\{ font-size: 16px; \}/.test(css)
+        && /\.tm-limits\[hidden\]/.test(css));
+  check("GOAL T1 tích Không giới hạn ở trần của chủ thì ô số tắt (cùng nhánh với hộp Toàn quyền)",
+        teamsJs.includes("/^tm-(auth-(cap|ceil)|cap)-[a-z_]+-unl$/") && teamsJs.includes("if (cur !== null) caps[k] = { unlimited: true };"));
+  // Review T1 #1 (af85ad71): bỏ tích Không giới hạn mà chưa nhập số thì không gửi gì và chỉ ra trần thiếu số.
+  (function () {
+    var cur = { task_turns: null, task_steps: 8, help_depth: 2, daily_turns: 100, mentions: 3, busy_wait_s: 1800 };
+    function form(over) {
+      return function (k) {
+        var f = { checked: ["task_turns", "task_steps", "help_depth", "daily_turns"].indexOf(k) >= 0 ? false : null,
+          value: cur[k] == null ? "" : String(cur[k]) };
+        return Object.assign(f, (over || {})[k] || {});
+      };
+    }
+    var miss = TM.capsPayload(cur, form());
+    check("review T1 #1 bỏ tích Không giới hạn, ô số trống: báo thiếu số, không gửi trần nào",
+          miss.missing === "task_turns" && Object.keys(miss.caps).length === 0, JSON.stringify(miss));
+    var mixed = TM.capsPayload(cur, form({ task_steps: { value: "9" } }));
+    check("review T1 #1 có trần khác đổi mà một trần thiếu số: vẫn không gửi phần nào (không lưu nửa vời)",
+          mixed.missing === "task_turns" && Object.keys(mixed.caps).length === 0, JSON.stringify(mixed));
+    var fixed = TM.capsPayload(cur, form({ task_turns: { value: "15" } }));
+    check("review T1 #1 nhập số sau khi bỏ tích: gửi đúng số đó", !fixed.missing && fixed.caps.task_turns === 15,
+          JSON.stringify(fixed));
+    var keep = TM.capsPayload(cur, form({ task_turns: { checked: true } }));
+    check("review T1 #1 vẫn tích Không giới hạn như đang lưu: không gửi gì, không báo thiếu",
+          !keep.missing && Object.keys(keep.caps).length === 0, JSON.stringify(keep));
+    var unl = TM.capsPayload(cur, form({ task_turns: { checked: true }, daily_turns: { checked: true } }));
+    check("review T1 #1 tích Không giới hạn mới: gửi {unlimited: true}", unl.caps.daily_turns && unl.caps.daily_turns.unlimited === true
+          && !("task_turns" in unl.caps), JSON.stringify(unl));
+    // Hành vi thật của nút Lưu (review T1 vòng 2 #7): thiếu số thì nhắc, focus đúng ô, không gọi POST.
+    var log = { notes: [], focus: [], posts: [] };
+    var ui = { note: function (t) { log.notes.push(t); }, focus: function (k) { log.focus.push(k); },
+      post: function (c) { log.posts.push(c); return Promise.resolve(); } };
+    var ret = TM.saveCapsFlow(cur, form(), ui);
+    check("review T1 #1 Lưu khi thiếu số: nhắc, focus ô task_turns, không POST",
+          ret === null && log.posts.length === 0 && log.focus.join() === "task_turns" && log.notes.length === 1 &&
+          log.notes[0] !== "teams.cap_need_number" && log.notes[0].length > 0, JSON.stringify(log));
+    log = { notes: [], focus: [], posts: [] };
+    TM.saveCapsFlow(cur, form({ task_turns: { value: "15" } }), ui);
+    check("review T1 #1 Lưu khi đã nhập số: POST đúng một lần với số đó, không focus",
+          log.posts.length === 1 && log.posts[0].task_turns === 15 && log.focus.length === 0, JSON.stringify(log));
+    log = { notes: [], focus: [], posts: [] };
+    TM.saveCapsFlow(cur, form({ task_turns: { checked: true } }), ui);
+    check("review T1 #1 Lưu khi không đổi gì: báo Đã lưu, không POST", log.posts.length === 0 && log.notes.length === 1,
+          JSON.stringify(log));
+    check("review T1 #1 khoá nhắc nhập số có ở vi và en", !!vi["teams.cap_need_number"] && !!en["teams.cap_need_number"]);
+    check("review T1 #3 nhãn kết quả mất quyền giữ có ở vi và en, nằm trong nhóm đến muộn",
+          teamsJs.includes('lease_lost: "teams.status.lease_lost"') && teamsJs.includes('"leader_changed", "lease_lost"]') &&
+          teamsJs.includes('lease_lost: "teams.reply.why.lease_lost"') && !!vi["teams.reply.why.lease_lost"] && !!en["teams.reply.why.lease_lost"] &&
+          !!vi["teams.status.lease_lost"] && !!en["teams.status.lease_lost"]);
+  })();
   process.exit(fails ? 1 : 0);
 })();
