@@ -8,6 +8,10 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.171.3] - 2026-10-16
+### Fixed
+- **Team chat no longer shows made-up command names.** When an assistant's reply contains a command Javis does not support, the team now notes "the reply had an unsupported Javis command, dropped" instead of printing the raw code in the bubble.
+
 ## [0.171.2] - 2026-10-16
 ### Fixes
 - **A dropped connection no longer kills the whole turn:** when the connection to the model provider is cut (errors like `ReadError ... WinError 1236` on Windows), Javis resends up to 3 times, even in the middle of a turn that uses tools. If it still fails, the message names the usual causes (network, VPN, antivirus) instead of just pasting the error chain.
