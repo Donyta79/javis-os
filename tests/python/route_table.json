@@ -4482,6 +4482,16 @@
  {
   "order": 450,
   "type": "APIRoute",
+  "path": "/sessions/{session_id}/messages/{message_id}/reaction",
+  "name": "sessions_message_reaction",
+  "methods": [
+   "POST"
+  ],
+  "trong": null
+ },
+ {
+  "order": 451,
+  "type": "APIRoute",
   "path": "/agents/jobs/counts",
   "name": "agent_jobs_counts",
   "methods": [
@@ -4490,7 +4500,7 @@
   "trong": null
  },
  {
-  "order": 451,
+  "order": 452,
   "type": "APIRoute",
   "path": "/agents/{slug}/jobs/verify-targets",
   "name": "agent_jobs_verify_targets",
@@ -4500,7 +4510,7 @@
   "trong": null
  },
  {
-  "order": 452,
+  "order": 453,
   "type": "APIRoute",
   "path": "/agents/{slug}/jobs",
   "name": "agent_jobs_list",
@@ -4510,7 +4520,7 @@
   "trong": null
  },
  {
-  "order": 453,
+  "order": 454,
   "type": "APIRoute",
   "path": "/agents/{slug}/jobs",
   "name": "agent_jobs_assign",
@@ -4520,7 +4530,7 @@
   "trong": null
  },
  {
-  "order": 454,
+  "order": 455,
   "type": "APIRoute",
   "path": "/model/fast-state",
   "name": "model_fast_state",
