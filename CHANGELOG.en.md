@@ -8,6 +8,11 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.166.2] - 2026-10-15
+### Fixed
+- **Creating images on the ChatGPT plan no longer gets stuck on "The 'gpt-5.5' model is not supported".** When your plan lacks that model, Javis switches to another model from your own account's ChatGPT model list and makes the image, with nothing to configure.
+- Next time Javis goes straight to the model that worked, so no extra failed round. Letting ChatGPT look at images for you is fixed the same way.
+
 ## [0.165.1] - 2026-10-15
 ### Fixed
 - **Files and links in a Project (and in each conversation) stay newest first** even when two were added in the same instant. Before, two items with the same timestamp could swap places at random between visits.
