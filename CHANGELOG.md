@@ -6,6 +6,14 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.191.1] - 2026-10-16
+### Cải thiện
+- **Chấm trạng thái 4 màu trên avatar:** khi cột Cộng sự co về dải avatar, chấm nhỏ trên avatar cho biết việc của cộng sự đó: đỏ là cần bạn (hoặc vừa hỏng), xanh nước biển là đang làm, vàng cam là đang chờ, xanh lá là vừa xong trong 24 giờ. Rê chuột vào thì thẻ tên ghi rõ bằng chữ.
+
+### Sửa lỗi
+- **Thẻ tên khi rê chuột đọc được rồi:** thẻ có nền đặc, không còn bị chữ phía sau lẫn vào.
+- **Ô chọn Nguồn, Trạng thái không còn bị trắng:** danh sách xổ xuống có nền đúng màu giao diện, chữ đọc rõ ở cả nền sáng lẫn nền tối.
+
 ## [0.191.0] - 2026-10-16
 ### Thêm mới
 - **Team gửi được file và ghim thư mục làm việc:** nút **+** trong khung chat Team có thêm **Đính kèm file hoặc ảnh** và **Ghim thư mục làm việc**. File chữ (.md, .txt, PDF, Word...) cả team đọc được nội dung; thư mục ghim hiện thành cây thư mục cho cả team biết dự án gồm gì.
