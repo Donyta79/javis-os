@@ -6,6 +6,15 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.182.0] - 2026-10-16
+### Sửa lỗi
+- **Khung chat không còn kéo trái kéo phải được:** trên điện thoại, nút cảm xúc ở góc bong bóng thò ra ngoài mép làm cả khung trượt ngang. Giờ nút nằm gọn trong bong bóng và khung chat chỉ cuộn lên xuống.
+- **Chạm vào nút Thích ăn ngay:** bản trước có một vùng vô hình đè lên nửa trên của nút, nên chạm trên điện thoại hay bấm vào mép trên trên máy tính đều không được tính.
+- **Nhấn giữ nút cảm xúc ở góc phải dưới cũng hiện hàng emoji** như khi nhấn giữ vào tin, trượt ngón tay để chọn.
+
+### Cải thiện
+- **Điện thoại: nút chọn model về lại thanh trên cùng** như trước, vẫn gọn chỉ tên model và có biểu tượng ghim. Bấm vào mở bảng chọn nhà cung cấp như cũ.
+
 ## [0.181.1] - 2026-10-16
 ### Cải thiện
 - **Tài liệu cài trên VPS dễ theo hơn:** README, Quick start và hướng dẫn cài server được làm gọn lại, các bản dịch cập nhật theo.
