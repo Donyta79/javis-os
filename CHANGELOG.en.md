@@ -8,6 +8,11 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.184.0] - 2026-10-16
+### Fixed
+- **Long press on a phone no longer triggers the phone's own text selection (iPhone and Android):** holding a message a little longer used to highlight the text and show the phone's Copy bar on top of the Javis menu. Now only the Javis menu appears (reactions, Reply, Copy...).
+- **Copying still works:** Copy in the menu copies the whole message. Text fields can still be selected and pasted into.
+
 ## [0.183.0] - 2026-10-16
 ### Fixed
 - **Zalo no longer silently misses a contact's reply:** every Javis restart or update used to wipe the Zalo message store, so a message that came in right then could vanish from all three ways of reading. The store is now kept (30 days) and survives restarts.
