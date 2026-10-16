@@ -6,6 +6,14 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.187.0] - 2026-10-16
+### Thêm mới
+- **Hỏi Javis Core về một thông báo:** thẻ trong chuông có nút **Hỏi Javis Core**. Thông báo được đưa vào khung Javis Core của bạn kèm nguồn và thời điểm để hỏi tiếp; thông báo chung không đổi.
+- **Xem, sửa, quên trí nhớ:** thẻ Javis Core có mục **Trí nhớ của brain này**, liệt kê Javis đang nhớ gì và từ đâu. Quên rồi thì Javis không tự học lại từ chat cũ; có công tắc tắt việc lưu ghi nhớ mới.
+- **Hồ sơ của bạn dùng chung mọi brain:** cách xưng hô, ngôn ngữ, mức chi tiết bạn tự viết một lần; ghi nhớ riêng của từng brain vẫn thắng khi khác nhau.
+### Cải thiện
+- **Tin tức đọc rồi là hết chấm trên mọi máy**, và thông báo đẩy gắn với lần đăng nhập: đăng xuất thì thiết bị đó ngừng nhận. Có tuỳ chọn **ẩn nội dung** trên thông báo đẩy.
+
 ## [0.186.0] - 2026-10-16
 ### Sửa lỗi
 - **Báo cáo không có hội thoại riêng giờ về Javis Core của đúng brain:** việc nền, loop, nhắc hẹn tạo trên trang Việc hay không gắn chat sẽ báo vào khung Javis Core của brain đã sinh ra việc đó, không phụ thuộc brain bạn đang mở.
