@@ -8,6 +8,13 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.176.0] - 2026-10-16
+### Improved
+- **Team chat that reads like a real chat app:** bold text, lists and colours look exactly like the main chat. The "Teams" title bar is gone to give the chat more room, and the settings panel uses smaller text.
+- **Reply to any message:** hover a message and press Reply (on a phone, swipe it to the left). Replying to an assistant's message goes straight to that assistant, so feedback is just a chat reply, no reasons to pick.
+- **Zalo-style reactions:** the latest assistant message always shows a Like button, hovering it opens 6 emoji (long press on a phone). The reasons panel and comment box are gone.
+- **Cleaner composer:** a **+** button holds Assign job, Mention an assistant and Search; a new **mic button** turns speech into text. Each team has a ⋯ menu to Pin, Rename or Delete; click the team name to rename it; click an assistant's picture to open its settings.
+
 ## [0.175.0] - 2026-10-16
 ### Fixed
 - **Connecting Higgsfield (and other MCP servers that sign in through Clerk) no longer fails with invalid_grant:** Javis asks only for the permissions the MCP server needs. If the provider refuses one, Javis drops it and reopens the sign-in page; other sign-in errors now show their real name.
