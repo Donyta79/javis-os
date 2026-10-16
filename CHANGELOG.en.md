@@ -8,6 +8,12 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.173.0] - 2026-10-16
+### Added
+- **Javis creates and manages team chats from the chat box.** Ask for "a test team of three assistants" and Javis creates any missing assistant, sets up the team and picks the leader; renaming, adding or removing members, archiving or deleting a team works the same way.
+- Each assistant created this way can run its own model, so a mixed-model test team takes one request.
+- An archived team can now be deleted for good. If the team you have open is deleted, the Teams page closes it and tells you.
+
 ## [0.172.0] - 2026-10-16
 ### Added
 - **Personal Zalo: set how many minutes the bot steps aside after you type by hand** (0 means never). The clock starts at your last hand-typed message, so in private chats the bot answers for you sooner than before. Once a number is set, a direct tag in a group is still answered right away.

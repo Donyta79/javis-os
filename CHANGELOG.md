@@ -6,6 +6,12 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.173.0] - 2026-10-16
+### Thêm mới
+- **Javis tự tạo và quản lý nhóm chat ngay trong khung chat.** Nói "tạo nhóm thử gồm ba trợ lý" là Javis tạo trợ lý còn thiếu, lập nhóm, chọn trưởng nhóm; sửa tên, thêm bớt người, lưu trữ hay xoá nhóm cũng chỉ cần nói.
+- Mỗi trợ lý tạo theo cách này có thể chạy một model riêng, để thử nhóm nhiều model cho nhanh.
+- Nhóm đã lưu trữ giờ xoá hẳn được. Nhóm đang mở mà bị xoá thì trang Nhóm tự đóng lại và báo cho bạn biết.
+
 ## [0.172.0] - 2026-10-16
 ### Thêm mới
 - **Zalo cá nhân, chỉnh được số phút bot nhường khi bạn tự nhắn tay** (0 là không nhường). Mốc tính từ tin nhắn tay cuối của bạn, nên ở chat riêng bot trả lời thay sớm hơn trước. Đã ghi số thì trong nhóm, tin tag thẳng nick vẫn được trả lời ngay.
