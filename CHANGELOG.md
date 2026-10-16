@@ -6,6 +6,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.185.0] - 2026-10-16
+### Thêm mới
+- **Javis Core, trợ lý hệ thống có sẵn trong mọi brain:** luôn đứng đầu trang Trợ lý với nhãn **Hệ thống**, ở cả brain cũ lẫn brain mới. Đây là đầu mối để nhận báo cáo, hỏi tiếp và giao việc, với đủ năng lực của Javis.
+- **Không xoá, đổi tên, bỏ ghim hay sửa được:** máy chủ chặn luôn chứ không chỉ ẩn nút. Chọn model vẫn như mọi cuộc trò chuyện.
+- **Mỗi brain có một chat Javis Core mặc định:** xoá hay lưu trữ chat đó thì lần sau Javis tạo một chat mới trống, không khôi phục nội dung đã xoá.
+- **Cập nhật một lần cho mọi brain:** định nghĩa Javis Core đi kèm ứng dụng, không chép vào brain, nên trí nhớ và cá nhân hoá của bạn giữ nguyên qua mỗi bản cập nhật.
+
 ## [0.184.0] - 2026-10-16
 ### Sửa lỗi
 - **Ấn giữ tin nhắn trên điện thoại không còn dính lệnh chọn chữ của máy (iPhone và Android):** trước đây giữ lâu một chút là máy tự bôi xanh chữ và hiện thanh Sao chép của nó, đè lên khung của Javis. Giờ chỉ còn khung Javis (thả cảm xúc, Trả lời, Sao chép...).
