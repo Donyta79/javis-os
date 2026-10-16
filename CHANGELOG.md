@@ -6,6 +6,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.186.0] - 2026-10-16
+### Sửa lỗi
+- **Báo cáo không có hội thoại riêng giờ về Javis Core của đúng brain:** việc nền, loop, nhắc hẹn tạo trên trang Việc hay không gắn chat sẽ báo vào khung Javis Core của brain đã sinh ra việc đó, không phụ thuộc brain bạn đang mở.
+- **Không còn gửi đoán sang Telegram:** trước đây báo cáo không rõ người nhận bị gửi cho ID Telegram ĐẦU TIÊN trong danh sách (có thể là người khác dùng chung bot), còn tin loop tự dừng thì gửi cho MỌI ID. Giờ chỉ gửi cho Telegram của chính bạn.
+- **Ô mới "Telegram của bạn (nhận báo cáo)"** trong cài đặt Telegram. Danh sách chỉ có một ID thì Javis tự dùng ID đó; có nhiều ID thì bạn chọn, Javis không đoán.
+- **Không gửi trùng khi thử lại:** một báo cáo được gửi lại sau sự cố chỉ hiện một lần. Chat gốc đã xoá thì báo cáo về Javis Core; không rõ cả chat lẫn brain thì chỉ giữ ở chuông thông báo.
+
 ## [0.185.0] - 2026-10-16
 ### Thêm mới
 - **Javis Core, trợ lý hệ thống có sẵn trong mọi brain:** luôn đứng đầu trang Trợ lý với nhãn **Hệ thống**, ở cả brain cũ lẫn brain mới. Đây là đầu mối để nhận báo cáo, hỏi tiếp và giao việc, với đủ năng lực của Javis.
