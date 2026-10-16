@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.177.0] - 2026-10-16
+### Cải thiện
+- **Thả cảm xúc kiểu Zalo ở khung Trò chuyện:** nút 👍 nằm ngay góc phải dưới bong bóng câu trả lời, bấm một cái là Thích, bấm lại là bỏ. Rê chuột vào nút hiện 6 biểu tượng, điện thoại thì nhấn giữ câu trả lời.
+- **Bỏ hẳn bảng lý do và góp ý** (Đúng ý, Sai dữ kiện, Nói hay im, ô Góp ý, chữ "Đã nhận") ở cả khung Trò chuyện lẫn trang Cộng sự. Muốn sửa câu trả lời thì nhắn lại hoặc trích dẫn tin đó.
+
 ## [0.176.0] - 2026-10-16
 ### Cải thiện
 - **Nhóm chat giống app chat thật:** chữ in đậm, danh sách, màu sắc hiện y như khung Trò chuyện. Bỏ dòng tiêu đề "Nhóm" để khung chat rộng hơn, chữ ở phần cài đặt nhỏ lại cho dễ nhìn.
