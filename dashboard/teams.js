@@ -46,6 +46,9 @@
   var BLOCK_KEY = { failed: "teams.block.failed", interrupted: "teams.block.interrupted", no_leader: "teams.block.no_leader",
     assignee_removed: "teams.block.assignee_removed", no_progress: "teams.block.no_progress", cap_reached: "teams.block.cap_reached",
     agent_busy_long: "teams.block.agent_busy_long", waiting_user: "teams.block.waiting_user", cancelled: "teams.block.cancelled",
+    rejected: "teams.block.rejected", approval_expired: "teams.block.approval_expired",
+    acceptance_review: "teams.block.acceptance_review", acceptance_failed: "teams.block.acceptance_failed",
+    acceptance_checking: "teams.block.acceptance_checking",
     server_ceiling: "teams.block.server_ceiling" };
   var CAP_KEY = { task_turns: "teams.cap.task_turns", task_steps: "teams.cap.task_steps", daily_turns: "teams.cap.daily_turns",
     mentions: "teams.cap.mentions", help_depth: "teams.cap.help_depth", busy_wait_s: "teams.cap.busy_wait_s",
@@ -619,6 +622,15 @@
     var meta = m.meta || {};
     var open = ctx.picker !== undefined && ctx.picker !== null && Number(ctx.picker) === Number(m.id);
     var hit = ctx.jumped !== undefined && ctx.jumped !== null && Number(ctx.jumped) === Number(m.id);
+    if (m.author_kind !== "owner" && m.author_kind !== "agent" && meta.kind === "approval_request" && meta.approval) {
+      return approvalCardHtml(m);
+    }
+    if (m.author_kind !== "owner" && m.author_kind !== "agent" && meta.kind === "mandate_opportunity" && meta.opportunity) {
+      return opportunityCardHtml(m);
+    }
+    if (m.author_kind !== "owner" && m.author_kind !== "agent" && meta.kind === "acceptance_review" && meta.acceptance) {
+      return acceptanceCardHtml(m);
+    }
     if (m.author_kind !== "owner" && m.author_kind !== "agent") {
       return '<div class="tm-sys' + (hit ? " tm-msg-hit" : "") + '" data-mid="' + esc(m.id) + '">' +
         esc(m.content).replace(/\n/g, "<br>") + "</div>";
@@ -702,7 +714,14 @@
     if (kind === "failed" || kind === "no_progress") return { act: "retry", key: "teams.act.retry" };
     if (kind === "interrupted") return { act: "retry", key: "teams.act.continue" };
     if (kind === "no_leader") return { act: "leader", key: "teams.pick_leader" };
-    if (kind === "agent_busy_long" || kind === "waiting_user") return { act: "resume", key: "teams.resume" };
+    if (kind === "agent_busy_long") return { act: "resume", key: "teams.resume" };
+    // 0.207.0: waiting for an approval: the card in the chat decides, this button only shows it. Rejected or expired:
+    // the owner edits the job to give a new direction (cancel stays next to it).
+    if (kind === "waiting_user") return { act: "view", key: "teams.ap.show" };
+    if (kind === "rejected" || kind === "approval_expired") return { act: "amend", key: "teams.amend" };
+    // 0.209.0: waiting for the owner's acceptance: the card decides; out of fix rounds: edit the job for a new try.
+    if (kind === "acceptance_review") return { act: "view", key: "teams.acc.show" };
+    if (kind === "acceptance_failed") return { act: "amend", key: "teams.amend" };
     return null;
   }
 
@@ -712,6 +731,8 @@
     var label = esc(tw(a.key));
     if (a.act === "extend") return '<button type="button" class="ws-btn tm-primary" data-extend="' + esc(t.id) + '">' + label + "</button>";
     if (a.act === "leader") return '<button type="button" class="ws-btn tm-primary" data-open-team="1">' + label + "</button>";
+    if (a.act === "view") return '<button type="button" class="ws-btn tm-primary" data-view-task="' + esc(t.id) + '">' + label + "</button>";
+    if (a.act === "amend") return '<button type="button" class="ws-btn tm-primary" data-amend="' + esc(t.id) + '">' + label + "</button>";
     return '<button type="button" class="ws-btn tm-primary" data-unblock="' + esc(t.id) + '" data-action="' + a.act + '">' +
       label + "</button>";
   }
@@ -721,6 +742,9 @@
     return '<div class="tm-jcard"><div class="tm-jcard-text"><strong class="tm-qtitle">' + esc(t.title) + "</strong>" +
       '<span class="tm-qwhy">' + esc(t.block_reason || tw(BLOCK_KEY[kind] || BLOCK_KEY.failed)) + "</span></div>" +
       '<span class="tm-actions">' + blockedButtonHtml(t) +
+      // 0.209.0 review: criteria can be set on a stopped job too (acceptance_failed re-checks without redoing the work).
+      (kind === "acceptance_review" || kind === "acceptance_checking" ? "" :
+        '<button type="button" class="ws-btn" data-acc-edit="' + esc(t.id) + '">' + esc(tw("teams.acc.set")) + "</button>") +
       '<button type="button" class="ws-btn" data-cancel="' + esc(t.id) + '">' + esc(tw("teams.cancel")) + "</button></span></div>";
   }
 
@@ -729,7 +753,63 @@
       '<span class="tm-qtitle">' + esc(tw("teams.doing", { title: t.title })) + '</span><span class="tm-actions">' +
       (withView ? '<button type="button" class="ws-btn" data-view-task="' + esc(t.id) + '">' + esc(tw("teams.view_msgs")) + "</button>" : "") +
       '<button type="button" class="ws-btn" data-amend="' + esc(t.id) + '">' + esc(tw("teams.amend")) + "</button>" +
+      (withView ? '<button type="button" class="ws-btn" data-acc-edit="' + esc(t.id) + '">' + esc(tw("teams.acc.set")) + "</button>" : "") +
       '<button type="button" class="ws-btn" data-cancel="' + esc(t.id) + '">' + esc(tw("teams.cancel")) + "</button></span></div>";
+  }
+
+  // 0.209.0: acceptance criteria of a job, one per line (parsed by parseCriteria):
+  //   file: path | contains: path | min chars | phrase, phrase | json: path | key, key | cmd: command | confirm: path
+  function parseCriteria(text) {
+    var out = [], bad = [];
+    String(text || "").split("\n").forEach(function (line) {
+      var l = line.trim();
+      if (!l) return;
+      var i = l.indexOf(":");
+      var k = i > 0 ? l.slice(0, i).trim().toLowerCase() : "";
+      var parts = (i > 0 ? l.slice(i + 1) : "").split("|").map(function (x) { return x.trim(); });
+      var list = function (x) { return String(x || "").split(",").map(function (y) { return y.trim(); }).filter(Boolean); };
+      if (k === "file" && parts[0]) out.push({ kind: "file_exists", path: parts[0] });
+      else if (k === "contains" && parts[0]) out.push({ kind: "file_contains", path: parts[0], min_chars: Number(parts[1]) || 0, must_contain: list(parts[2]) });
+      else if (k === "json" && parts[0]) out.push({ kind: "json_keys", path: parts[0], keys: list(parts[1]) });
+      else if (k === "cmd" && parts[0]) out.push({ kind: "command_ok", command: l.slice(i + 1).trim() });
+      else if (k === "confirm") out.push(parts[0] ? { kind: "owner_confirm", path: parts[0] } : { kind: "owner_confirm" });
+      else bad.push(l);
+    });
+    return { criteria: out, bad: bad };
+  }
+
+  function accEditorHtml(t, view) {
+    if (!view || view.accEdit !== t.id) return "";
+    return '<form class="tm-form tm-acc-form" data-acc-task="' + esc(t.id) + '" onsubmit="return false">' +
+      '<label class="tm-field"><span>' + esc(tw("teams.acc.criteria")) + '</span><textarea name="tm-acc-text" rows="4"></textarea></label>' +
+      '<div class="tm-sub">' + esc(tw("teams.acc.help")) + "</div>" +
+      '<div class="tm-sub">' + esc(tw("teams.acc.replace")) + "</div>" +
+      '<label class="tm-field tm-cap"><span>' + esc(tw("teams.acc.rounds")) + '</span><input type="number" min="0" max="5" name="tm-acc-rounds" value="2"></label>' +
+      '<div class="tm-actions"><button type="button" class="ws-btn tm-primary tm-acc-save">' + esc(tw("teams.save")) +
+      '</button><button type="button" class="ws-btn" data-acc-edit="">' + esc(tw("teams.cancel")) + "</button></div></form>";
+  }
+
+  // The owner's acceptance card: what was checked on the product, Accept or Send back.
+  var ACC_V_KEY = { pass: "teams.acc.v.pass", fail: "teams.acc.v.fail", unknown: "teams.acc.v.unknown" };
+  function acceptanceCardHtml(m) {
+    var a = (m.meta || {}).acceptance || {};
+    var rows = (a.last || []).map(function (x) {
+      var c = (a.criteria || [])[x.idx] || {};
+      var what = c.label || c.path || c.command || c.kind || "";
+      var ev = x.evidence || {};
+      return "<li><b>" + esc(tw(ACC_V_KEY[x.verdict] || ACC_V_KEY.unknown)) + "</b> · " + esc(what) +
+        (ev.detail ? " · " + esc(ev.detail) : "") + (ev.sha256 ? ' <code>' + esc(String(ev.sha256).slice(0, 12)) + "</code>" : "") + "</li>";
+    }).join("");
+    var waiting = a.status === "review";
+    return '<div class="tm-ap tm-acc tm-ap-' + esc(a.status || "") + '" data-mid="' + esc(m.id) + '" role="group"><div class="tm-ap-head">' +
+      ic("check") + "<b>" + esc(tw("teams.acc.title")) + "</b></div>" + '<ul class="tm-ap-calls">' + rows + "</ul>" +
+      ((a.stale || []).length ? '<div class="tm-note-line">' + esc(tw("teams.acc.stale")) + "</div>" : "") +
+      (waiting ? '<div class="tm-actions"><button type="button" class="ws-btn tm-primary" data-acc-decide="accept" data-acc="' +
+        esc(a.task_id) + '" data-acc-rev="' + esc(a.revision) + '" data-acc-round="' + esc(a.rounds) + '">' + esc(tw("teams.acc.accept")) +
+        '</button><button type="button" class="ws-btn" data-acc-decide="reject" data-acc="' + esc(a.task_id) + '" data-acc-rev="' +
+        esc(a.revision) + '" data-acc-round="' + esc(a.rounds) + '">' + esc(tw("teams.acc.reject")) + "</button></div>" :
+        '<div class="tm-ap-state">' + esc(tw(a.status === "accepted" ? "teams.acc.st.accepted" : "teams.acc.st.closed")) + "</div>") +
+      "</div>";
   }
 
   // Dải việc ở đầu khung chat: việc đang làm (một dòng) và việc đang chờ chủ (thẻ có nút giải quyết).
@@ -757,11 +837,11 @@
     var h = "";
     if (running.length) {
       h += '<div class="tm-qhead">' + esc(tw("teams.queue_running")) + "</div>";
-      h += running.map(function (t) { return runningRowHtml(t, true); }).join("");
+      h += running.map(function (t) { return runningRowHtml(t, true) + accEditorHtml(t, view); }).join("");
     }
     if (blocked.length) {
       h += '<div class="tm-qhead">' + esc(tw("teams.queue_blocked")) + "</div>";
-      h += blocked.map(blockedCardHtml).join("");
+      h += blocked.map(function (t) { return blockedCardHtml(t) + accEditorHtml(t, view); }).join("");
     }
     if (waiting.length) {
       h += '<div class="tm-qhead">' + esc(tw("teams.queue_waiting")) + "</div>";
@@ -772,7 +852,9 @@
           '<span class="tm-qtitle">' + esc(t.title) + '</span><span class="tm-actions">' +
           '<button type="button" class="ws-btn" data-prio="' + esc(t.id) + '" data-on="' + (star ? "0" : "1") + '">' +
           esc(tw(star ? "teams.unprioritize" : "teams.prioritize")) + "</button>" +
-          '<button type="button" class="ws-btn" data-cancel="' + esc(t.id) + '">' + esc(tw("teams.cancel")) + "</button></span></div>";
+          '<button type="button" class="ws-btn" data-acc-edit="' + esc(t.id) + '">' + esc(tw("teams.acc.set")) + "</button>" +
+          '<button type="button" class="ws-btn" data-cancel="' + esc(t.id) + '">' + esc(tw("teams.cancel")) + "</button></span></div>" +
+          accEditorHtml(t, view);
       }).join("");
     }
     return h + fin;
@@ -1352,6 +1434,188 @@
       '<div class="tm-sub">' + esc(tw("teams.turns_note")) + "</div></div>";
   }
 
+  // 0.208.0: department mandate (team_mandate.py). Kinds, levels and states with literal keys for test_i18n.
+  var MD_KINDS = ["file_changed", "job_failed", "test_failing", "connection_down"];
+  var MD_KIND_KEY = { file_changed: "teams.md.kind.file_changed", job_failed: "teams.md.kind.job_failed",
+    test_failing: "teams.md.kind.test_failing", connection_down: "teams.md.kind.connection_down" };
+  var MD_LEVELS = ["watch", "propose", "approve", "act"];
+  var MD_LEVEL_KEY = { watch: "teams.md.level.watch", propose: "teams.md.level.propose", approve: "teams.md.level.approve",
+    act: "teams.md.level.act" };
+  var MD_STATUS_KEY = { off: "teams.md.st.off", active: "teams.md.st.active", paused: "teams.md.st.paused",
+    revoked: "teams.md.st.revoked" };
+  var MD_SRC_KEY = { ok: "teams.md.src.ok", missing: "teams.md.src.missing", never: "teams.md.src.never" };
+  var OPP_ST_KEY = { proposed: "teams.md.opp.proposed", enqueued: "teams.md.opp.enqueued", asked: "teams.md.opp.asked",
+    rejected: "teams.md.opp.rejected", expired: "teams.md.opp.expired", dismissed: "teams.md.opp.dismissed",
+    watched: "teams.md.opp.watched", open: "teams.md.opp.proposed", accepting: "teams.md.opp.enqueued" };
+
+  function mdLevelOf(m, kind) {
+    var a = (m && m.autonomy) || {};
+    if ((a.act || []).indexOf(kind) >= 0) return "act";
+    if ((a.approve || []).indexOf(kind) >= 0) return "approve";
+    if ((a.propose || []).indexOf(kind) >= 0) return "propose";
+    return "watch";
+  }
+
+  function mandateFormHtml(m) {
+    m = m || {};
+    var b = m.budget || {};
+    var area = function (name, key, val, rows) {
+      return '<label class="tm-field"><span>' + esc(tw(key)) + '</span><textarea name="' + name + '" rows="' + (rows || 2) +
+        '">' + esc(val || "") + "</textarea></label>";
+    };
+    var num = function (name, key, val) {
+      return '<label class="tm-field tm-cap"><span>' + esc(tw(key)) + '</span><input type="number" min="0" name="' + name +
+        '" value="' + esc(val == null ? "" : val) + '"></label>';
+    };
+    var levels = MD_KINDS.map(function (k) {
+      var cur = mdLevelOf(m, k);
+      return '<label class="tm-field tm-cap"><span>' + esc(tw(MD_KIND_KEY[k])) + '</span><select name="tm-md-lvl-' + k + '">' +
+        MD_LEVELS.map(function (l) {
+          return '<option value="' + l + '"' + (l === cur ? " selected" : "") + ">" + esc(tw(MD_LEVEL_KEY[l])) + "</option>";
+        }).join("") + "</select></label>";
+    }).join("");
+    return '<form class="tm-form tm-md-form" onsubmit="return false">' +
+      area("tm-md-outcome", "teams.md.outcome", m.outcome, 2) +
+      area("tm-md-metrics", "teams.md.metrics", (m.metrics || []).join("\n"), 3) +
+      area("tm-md-sources", "teams.md.sources", (m.sources || []).join("\n"), 3) +
+      '<div class="tm-sub">' + esc(tw("teams.md.sources_help")) + "</div>" +
+      area("tm-md-scope", "teams.md.scope", m.scope, 2) +
+      num("tm-md-cadence", "teams.md.cadence", m.cadence_min || 60) +
+      num("tm-md-obs", "teams.md.observe_per_day", b.observe_per_day == null ? 48 : b.observe_per_day) +
+      num("tm-md-jobs", "teams.md.jobs_per_day", b.jobs_per_day == null ? 3 : b.jobs_per_day) +
+      num("tm-md-maxopen", "teams.md.max_open", (m.stop || {}).max_open_jobs) +
+      '<div class="tm-qhead">' + esc(tw("teams.md.autonomy")) + "</div>" + levels +
+      '<div class="tm-actions"><button type="button" class="ws-btn tm-primary tm-md-save">' + esc(tw("teams.save")) +
+      '</button><button type="button" class="ws-btn" data-mandate-edit="0">' + esc(tw("teams.cancel")) + "</button></div></form>";
+  }
+
+  function mandateHtml(team, editing) {
+    var m = team.mandate;
+    var head = '<div class="tm-qhead">' + esc(tw("teams.md.title")) + "</div>";
+    if (editing) return '<section class="tm-sec tm-md">' + head + mandateFormHtml(m) + "</section>";
+    if (!m) {
+      return '<section class="tm-sec tm-md">' + head + '<div class="tm-sub">' + esc(tw("teams.md.none")) + "</div>" +
+        '<div class="tm-actions"><button type="button" class="ws-btn" data-mandate-edit="1">' + esc(tw("teams.md.set")) +
+        "</button></div></section>";
+    }
+    var st = m.status || "off";
+    var srcs = (m.sources_state || []).map(function (x) {
+      return '<li class="tm-md-src tm-md-src-' + esc(x.state) + '"><code>' + esc(x.source) + "</code> · " +
+        esc(tw(MD_SRC_KEY[x.state] || MD_SRC_KEY.never)) + (x.missing ? ": " + esc(x.missing) : "") + "</li>";
+    }).join("");
+    var lv = MD_KINDS.map(function (k) { return esc(tw(MD_KIND_KEY[k])) + ": " + esc(tw(MD_LEVEL_KEY[mdLevelOf(m, k)])); }).join(" · ");
+    var btn = function (status, key) {
+      return '<button type="button" class="ws-btn" data-mandate-status="' + status + '">' + esc(tw(key)) + "</button>";
+    };
+    var acts = st === "revoked" ? "" : (st === "active" ? btn("paused", "teams.md.pause") : btn("active", "teams.md.start")) +
+      btn("revoked", "teams.md.revoke");
+    return '<section class="tm-sec tm-md">' + head +
+      '<div class="tm-md-status tm-md-' + esc(st) + '">' + esc(tw(MD_STATUS_KEY[st] || MD_STATUS_KEY.off)) +
+      " · " + esc(tw("teams.md.version", { v: m.version })) + "</div>" +
+      '<div class="tm-md-outcome">' + esc(m.outcome) + "</div>" +
+      ((m.metrics || []).length ? '<ul class="tm-md-metrics">' + m.metrics.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "") +
+      '<div class="tm-sub">' + esc(tw("teams.md.sources")) + '</div><ul class="tm-md-srcs">' + srcs + "</ul>" +
+      '<div class="tm-sub">' + lv + "</div>" +
+      (m.observing === false ? '<div class="tm-note-line">' + esc(tw("teams.md.not_observing")) + "</div>" : "") +
+      '<div class="tm-actions">' + acts + '<button type="button" class="ws-btn" data-mandate-edit="1">' +
+      esc(tw("teams.md.edit")) + "</button></div></section>";
+  }
+
+  // A proposal card from the mandate in the team chat: why, evidence, and the owner's two buttons.
+  function opportunityCardHtml(m) {
+    var o = (m.meta || {}).opportunity || {};
+    var st = o.status || "proposed";
+    var ev = (o.evidence || []).map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("");
+    var foot = (st === "proposed" || st === "open") ?
+      '<div class="tm-actions"><button type="button" class="ws-btn tm-primary" data-opp-decide="accept" data-opp="' +
+        esc(o.opp_id) + '">' + esc(tw("teams.md.accept")) + '</button><button type="button" class="ws-btn" data-opp-decide="reject" data-opp="' +
+        esc(o.opp_id) + '">' + esc(tw("teams.md.reject")) + "</button></div>" :
+      '<div class="tm-ap-state">' + esc(tw(OPP_ST_KEY[st] || OPP_ST_KEY.proposed)) + "</div>";
+    return '<div class="tm-ap tm-opp tm-ap-' + esc(st) + '" data-mid="' + esc(m.id) + '" role="group"><div class="tm-ap-head">' +
+      ic("lightbulb") + "<b>" + esc(tw("teams.md.opp_title")) + "</b></div>" +
+      '<div>' + esc(o.reason || "") + "</div>" +
+      (o.benefit ? '<div class="tm-ap-row"><span class="tm-ap-k">' + esc(tw("teams.md.benefit")) + "</span><span>" + esc(o.benefit) + "</span></div>" : "") +
+      (ev ? '<div class="tm-ap-k">' + esc(tw("teams.ap.evidence")) + '</div><ul class="tm-ap-ev">' + ev + "</ul>" : "") +
+      '<div class="tm-sub"><code>' + esc((o.source || "") + ":" + (o.ref || "") + " @ " + (o.version_key || "")) + "</code></div>" +
+      foot + "</div>";
+  }
+
+  function readMandateForm(form) {
+    var val = function (n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value : ""; };
+    var lines = function (n) { return val(n).split("\n").map(function (x) { return x.trim(); }).filter(Boolean); };
+    var autonomy = { act: [], approve: [], propose: [] };
+    MD_KINDS.forEach(function (k) {
+      var l = val("tm-md-lvl-" + k);
+      if (autonomy[l]) autonomy[l].push(k);
+    });
+    var body = { outcome: val("tm-md-outcome").trim(), metrics: lines("tm-md-metrics"), sources: lines("tm-md-sources"),
+      scope: val("tm-md-scope").trim(), cadence_min: Number(val("tm-md-cadence")) || 60,
+      budget: { observe_per_day: Number(val("tm-md-obs")), jobs_per_day: Number(val("tm-md-jobs")) }, autonomy: autonomy };
+    if (val("tm-md-maxopen") !== "") body.stop = { max_open_jobs: Number(val("tm-md-maxopen")) };
+    return body;
+  }
+
+  var WM_KEY = { gated: ["teams.wm.gated", "teams.wm.gated_desc"], full: ["teams.wm.full", "teams.wm.full_desc"] };
+  var AP_ST_KEY = { pending: "teams.ap.st.pending", approved: "teams.ap.st.approved", consumed: "teams.ap.st.consumed",
+    rejected: "teams.ap.st.rejected", changes_requested: "teams.ap.st.changes_requested", expired: "teams.ap.st.expired",
+    superseded: "teams.ap.st.superseded", cancelled: "teams.ap.st.cancelled", revoked: "teams.ap.st.revoked" };
+
+  // 0.207.0: what the team may do outside without asking. Gated (default): outside actions wait for an approval card.
+  function workModeHtml(team) {
+    var full = team.work_mode === "full";
+    return '<section class="tm-sec tm-wm" aria-label="' + esc(tw("teams.wm.title")) + '"><div class="tm-qhead">' +
+      esc(tw("teams.wm.title")) + "</div>" +
+      ["gated", "full"].map(function (m) {
+        return '<label class="tm-radio"><input type="radio" name="tm-wm" value="' + m + '" data-work-mode="' + m + '"' +
+          ((m === "full") === full ? " checked" : "") + "><span><b>" + esc(tw(WM_KEY[m][0])) + "</b><br>" +
+          esc(tw(WM_KEY[m][1])) + "</span></label>";
+      }).join("") + "</section>";
+  }
+
+  // 0.207.0: an approval request card in the team chat. State comes from the server (never guessed): waiting with three
+  // buttons, approved / used / rejected / void with who and why.
+  function approvalCardHtml(m) {
+    var ap = (m.meta || {}).approval || {};
+    var st = ap.status || "pending";
+    var rows = [];
+    if (ap.action) rows.push(["teams.ap.action", ap.action]);
+    if (ap.scope) rows.push(["teams.ap.scope", ap.scope]);
+    if (ap.impact) rows.push(["teams.ap.impact", ap.impact]);
+    var body = rows.map(function (r) {
+      return '<div class="tm-ap-row"><span class="tm-ap-k">' + esc(tw(r[0])) + "</span><span>" +
+        esc(r[1]).replace(/\n/g, "<br>") + "</span></div>";
+    }).join("");
+    var acts = (ap.actions || []).map(function (a) {
+      return '<li><code>' + esc(a.call || a.label) + "</code>" + (a.used ? " · " + esc(tw("teams.ap.used")) : "") + "</li>";
+    }).join("");
+    if (acts) body += '<div class="tm-ap-k">' + esc(tw("teams.ap.calls")) + '</div><ul class="tm-ap-calls">' + acts + "</ul>";
+    var ev = (ap.evidence || []).map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("");
+    if (ev) body += '<div class="tm-ap-k">' + esc(tw("teams.ap.evidence")) + '</div><ul class="tm-ap-ev">' + ev + "</ul>";
+    if (ap.deadline_at) {
+      body += '<div class="tm-ap-row"><span class="tm-ap-k">' + esc(tw("teams.ap.deadline")) + "</span><span>" +
+        esc(new Date(Number(ap.deadline_at) * 1000).toLocaleString()) + "</span></div>";
+    }
+    if (ap.kind === "question") body += '<div class="tm-sub">' + esc(tw("teams.ap.prose")) + "</div>";
+    var foot;
+    if (st === "pending") {
+      var b = function (d, k, cls) {
+        return '<button type="button" class="ws-btn' + (cls || "") + '" data-ap-decide="' + d + '" data-ap="' +
+          esc(ap.approval_id) + '" data-ap-rev="' + esc(ap.team_rev) + '">' + esc(tw(k)) + "</button>";
+      };
+      foot = '<div class="tm-actions">' + b("approve", "teams.ap.approve", " tm-primary") + b("changes", "teams.ap.changes") +
+        b("reject", "teams.ap.reject") + "</div>";
+    } else {
+      foot = '<div class="tm-ap-state tm-ap-' + esc(st) + '">' + esc(tw(AP_ST_KEY[st] || AP_ST_KEY.pending)) +
+        (ap.decision_note ? " · " + esc(ap.decision_note) : "") + (ap.close_reason && st !== "consumed" ? " · " +
+        esc(ap.close_reason) : "") + "</div>" +
+        (st === "approved" ? '<div class="tm-actions"><button type="button" class="ws-btn" data-ap-decide="revoke" data-ap="' +
+          esc(ap.approval_id) + '">' + esc(tw("teams.ap.revoke")) + "</button></div>" : "");
+    }
+    return '<div class="tm-ap tm-ap-' + esc(st) + '" data-mid="' + esc(m.id) + '" role="group" aria-label="' +
+      esc(tw("teams.ap.title")) + '"><div class="tm-ap-head">' + ic("shield") + "<b>" + esc(tw("teams.ap.title")) +
+      "</b> " + esc(ap.title || "") + "</div>" + body + foot + "</div>";
+  }
+
   // Tab Nhóm: thành viên, mức tự quyết, số lần đã dùng hôm nay, tên và trạng thái; mọi con số trong Nâng cao (đóng sẵn).
   function teamTabHtml(team, agents, ui) {
     ui = ui || {};
@@ -1360,6 +1624,7 @@
       esc(tw("teams.head_people", { n: nAct })) + "</div>" +
       membersHtml(team, agents, ui.openMember) + "</section>" +
       '<section class="tm-sec">' + levelsHtml(team) + usageHtml(team) + "</section>" +
+      workModeHtml(team) + mandateHtml(team, ui.mandateEdit) +
       '<section class="tm-sec"><div class="tm-qhead">' + esc(tw("teams.tab_team")) + "</div>" +
       '<label class="tm-rs tm-pin-row"><input type="checkbox" class="tm-pin-toggle"' + (team.pinned_at ? " checked" : "") +
       "><span>" + esc(tw("teams.pin_top")) + "</span></label>" + settingsFormHtml(team) + "</section>" +
@@ -2145,8 +2410,8 @@
         '">' + esc(tw(TAB_KEY[k])) + "</button>";
     }).join("");
     var body = S.tab === "info" ? infoTabHtml(S.team) : S.tab === "jobs" ? queueHtml(S.queue,
-      { openFin: S.openFin, archOpen: S.archOpen, members: S.team ? S.team.members : [] })
-      : teamTabHtml(S.team, S.agents, { openMember: S.openMember, advOpen: S.advOpen, turns: S.turns });
+      { openFin: S.openFin, archOpen: S.archOpen, members: S.team ? S.team.members : [], accEdit: S.accEdit })
+      : teamTabHtml(S.team, S.agents, { openMember: S.openMember, advOpen: S.advOpen, turns: S.turns, mandateEdit: S.mandateEdit });
     side.innerHTML = '<div class="tm-bar tm-side-bar"><div class="tm-tabs" role="tablist">' + tabs + "</div>" +
       '<button type="button" class="ws-btn tm-icon tm-close" aria-label="' + esc(tw("teams.close")) + '" title="' +
       esc(tw("teams.close")) + '">' + ic("x") + '</button></div><div class="tm-side-body" role="tabpanel" aria-label="' +
@@ -3352,6 +3617,76 @@
       if (typeof confirm === "function" && !confirm(tw("teams.cancel_confirm", { title: ct }))) return;
       return call("POST", teamUrl("/tasks/" + q(d.cancel) + "/cancel")).then(function (r) { act(r); });
     }
+    if (d.apDecide) {
+      var dec = d.apDecide, note = "";
+      if (dec === "reject" || dec === "changes") {
+        note = typeof prompt === "function" ? prompt(tw(dec === "reject" ? "teams.ap.reject_prompt" : "teams.ap.changes_prompt")) : "";
+        if (!note || !note.trim()) return;
+      } else if (dec === "revoke" && typeof confirm === "function" && !confirm(tw("teams.ap.revoke_confirm"))) {
+        return;
+      }
+      // One key per decision of this card in this tab: pressing again after a lost connection replays the same answer
+      // (no second action, no error), another tab has its own key and is told the request is already decided.
+      S.apKeys = S.apKeys || {};
+      var kk = d.ap + "|" + dec;
+      var dkey = S.apKeys[kk] || (S.apKeys[kk] = "ap-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10));
+      t.disabled = true;
+      return call("POST", teamUrl("/approvals/" + q(d.ap) + "/decide"), { decision: dec, note: (note || "").trim(),
+        decision_key: dkey, expected_rev: d.apRev ? Number(d.apRev) : null }).then(function (r) {
+        if (r.code !== 200) { t.disabled = false; fail(r); }
+        loadMsgs(false); loadQueue();
+      }).catch(function () { t.disabled = false; setNote(tw("teams.err_network")); });
+    }
+    if (d.mandateEdit !== undefined) { S.mandateEdit = d.mandateEdit === "1"; drawSide(); return; }
+    if (d.accEdit !== undefined) { S.accEdit = d.accEdit || null; drawSide(); return; }
+    if (t.classList.contains("tm-acc-save")) {
+      var af = t.closest(".tm-acc-form");
+      var parsed = parseCriteria((af.querySelector('[name="tm-acc-text"]') || {}).value);
+      if (parsed.bad.length || !parsed.criteria.length) { setNote(tw("teams.acc.bad", { line: parsed.bad[0] || "" })); return; }
+      return call("PUT", teamUrl("/tasks/" + q(af.getAttribute("data-acc-task")) + "/acceptance"),
+        { criteria: parsed.criteria, fix_rounds: Number((af.querySelector('[name="tm-acc-rounds"]') || {}).value || 2) }).then(function (r) {
+        if (r.code !== 200) return fail(r);
+        S.accEdit = null;
+        setNote(tw("teams.saved"));
+        act(r, drawSide);
+      });
+    }
+    if (d.accDecide) {
+      var anote = "";
+      if (d.accDecide === "reject") {
+        anote = typeof prompt === "function" ? prompt(tw("teams.acc.reject_prompt")) : "";
+        if (!anote || !anote.trim()) return;
+      }
+      t.disabled = true;
+      // The card's own revision and round: a click on an older card is refused by the server (never accepts a newer
+      // product the owner did not see).
+      return call("POST", teamUrl("/tasks/" + q(d.acc) + "/acceptance/decide"), { decision: d.accDecide, note: anote,
+        revision: d.accRev ? Number(d.accRev) : null, round: d.accRound ? Number(d.accRound) : null }).then(function (r) {
+        if (r.code !== 200) { t.disabled = false; fail(r); }
+        loadMsgs(false); loadQueue();
+      }).catch(function () { t.disabled = false; setNote(tw("teams.err_network")); });
+    }
+    if (t.classList.contains("tm-md-save")) {
+      var mform = S.el.querySelector(".tm-md-form");
+      if (!mform) return;
+      return call("PUT", teamUrl("/mandate"), readMandateForm(mform)).then(function (r) {
+        if (r.code !== 200) return fail(r);
+        S.mandateEdit = false;
+        setNote(tw("teams.saved"));
+        act(r, drawSide);
+      });
+    }
+    if (d.mandateStatus) {
+      if (d.mandateStatus === "revoked" && typeof confirm === "function" && !confirm(tw("teams.md.revoke_confirm"))) return;
+      return call("POST", teamUrl("/mandate/status"), { status: d.mandateStatus }).then(function (r) { act(r, drawSide); });
+    }
+    if (d.oppDecide) {
+      t.disabled = true;
+      return call("POST", teamUrl("/mandate/opportunities/" + q(d.opp) + "/decide"), { decision: d.oppDecide }).then(function (r) {
+        if (r.code !== 200) { t.disabled = false; fail(r); }
+        loadMsgs(false); loadQueue();
+      }).catch(function () { t.disabled = false; setNote(tw("teams.err_network")); });
+    }
     if (d.amend) {
       var at = S.taskTitles[d.amend] || d.amend;
       var text = typeof prompt === "function" ? prompt(tw("teams.amend_prompt", { title: at })) : "";
@@ -3522,6 +3857,13 @@
   }
 
   function onChange(e) {
+    if (e.target.hasAttribute && e.target.hasAttribute("data-work-mode") && S && S.activeId) {
+      // 0.207.0: the team's outside-action switch; the server logs it and posts a line in the chat.
+      return call("POST", teamUrl("/work_mode"), { mode: e.target.getAttribute("data-work-mode") }).then(function (r) {
+        if (r.code === 200) setNote(tw("teams.saved"));
+        act(r, drawSide);
+      });
+    }
     if (e.target.hasAttribute && e.target.hasAttribute("data-aa-file") && e.target.closest && e.target.closest(".tm-ava-set")) {
       uploadTeamAvatar(e.target);
       return;
@@ -3901,7 +4243,10 @@
   }
 
   var api = { render: render, leave: leave, open: open, teamListHtml: teamListHtml, messageHtml: messageHtml, queueHtml: queueHtml,
-    jobStripHtml: jobStripHtml, blockedAction: blockedAction, jobsChip: jobsChip, jobsChipHtml: jobsChipHtml, timeShort: timeShort,
+    jobStripHtml: jobStripHtml, blockedAction: blockedAction, approvalCardHtml: approvalCardHtml, workModeHtml: workModeHtml,
+    mandateHtml: mandateHtml, opportunityCardHtml: opportunityCardHtml, readMandateForm: readMandateForm,
+    parseCriteria: parseCriteria, acceptanceCardHtml: acceptanceCardHtml,
+    jobsChip: jobsChip, jobsChipHtml: jobsChipHtml, timeShort: timeShort,
     mentionMatches: mentionMatches, mentionsFromText: mentionsFromText, mentionScan: mentionScan, removeMention: removeMention,
     callsHtml: callsHtml, foldName: foldName, emailBefore: emailBefore, composerHint: composerHint, newClientId: newClientId,
     membersHtml: membersHtml, settingsFormHtml: settingsFormHtml, capsFormHtml: capsFormHtml, capsPayload: capsPayload, saveCapsFlow: saveCapsFlow, teamTabHtml: teamTabHtml, limitsHtml: limitsHtml,

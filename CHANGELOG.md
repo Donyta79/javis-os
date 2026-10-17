@@ -6,6 +6,35 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.210.0] - 2026-10-17
+### Cải thiện
+- **Thẻ của Team đọc dễ trên điện thoại:** nút và chữ phụ ở mục Mục tiêu phòng ban, Nghiệm thu giờ cỡ 16px, dòng dài tự xuống dòng thay vì bị cắt. Đã kiểm ở màn 390px bằng cả tiếng Việt và tiếng Anh.
+- **Dấu vết của mục tiêu phòng ban có thêm bước nghiệm thu:** đi trọn từ mục tiêu, quan sát, cơ hội, quyết định, duyệt, việc tới kết quả nghiệm thu.
+
+### Thêm mới
+- **Gói chuẩn bị pilot Team nhiều ngày** (thư mục `pilot/team-multiday`, chưa chạy): kịch bản 7 ngày cho 3 nhóm, giới hạn và điều kiện dừng, cách dừng khẩn và quay về bản cũ, chỉ số, công cụ xuất dấu vết chỉ đọc, mẫu báo cáo trống.
+
+## [0.209.0] - 2026-10-17
+### Thêm mới
+- **Nghiệm thu sản phẩm cho việc Team:** đặt tiêu chí ngay trên việc (có file, đủ nội dung, JSON đủ khoá, lệnh kiểm tra chạy đạt, bạn xác nhận). Việc chỉ chốt xong khi sản phẩm thật sự đạt.
+- **Chưa đạt thì tự sửa có giới hạn:** cộng sự nhận bước sửa ghi rõ chỗ chưa đạt, quá số vòng thì dừng chờ bạn. Mỗi lần kiểm có bằng chứng (mã băm, kích thước, giờ sửa) và lưu lại lịch sử.
+- **Thẻ Nghiệm thu sản phẩm** cho tiêu chí cần bạn xem: Đạt hay Trả lại kèm ghi chú. File đổi sau lần kiểm thì không chốt được; sửa sản phẩm sau khi nghiệm thu sẽ hiện cảnh báo.
+
+## [0.208.0] - 2026-10-17
+### Thêm mới
+- **Mục tiêu phòng ban cho Team:** đặt mục tiêu, cách đo, nguồn được giao (thư mục, việc Kanban lỗi, kết nối, lệnh kiểm tra), phạm vi, ngân sách mỗi ngày và mức tự quyết. Nhóm cũ không tự bật.
+- **Nhóm tự phát hiện cơ hội trong phạm vi:** thay đổi ở nguồn thành đề xuất có nguồn, lý do và lợi ích; tự mở việc, mở việc chờ duyệt hay chỉ đề xuất theo lựa chọn của bạn. Nguồn thiếu thì báo thiếu, không bịa.
+- **Không lặp, có hạn:** cùng dữ liệu không mở hai lần, cơ hội bỏ qua chỉ quay lại khi dữ liệu đổi, đề xuất quá 48 giờ tự hết hạn. Tạm dừng hay thu hồi bất cứ lúc nào.
+
+## [0.207.0] - 2026-10-17
+### Sửa lỗi
+- **Team hỏi bạn duyệt thì dừng thật:** câu "@Chủ nhóm anh duyệt nhé?" không còn bị coi là kết quả rồi tự chốt việc. Việc chuyển sang Chờ bạn duyệt, nhả chỗ cho việc khác, và chưa duyệt thì không có gì được làm.
+
+### Thêm mới
+- **Thẻ Xin duyệt trong chat Team:** ghi rõ sẽ làm gì, phạm vi, ảnh hưởng, bằng chứng và đúng lời gọi sẽ chạy, kèm nút Duyệt, Yêu cầu sửa, Từ chối, Thu hồi. Sửa hay huỷ việc làm thẻ cũ hết hiệu lực; bấm lại hay mở hai tab không làm hai lần.
+- **Chặn hành động ra ngoài trước khi chạy:** ở quyền mặc định "Cần chủ duyệt", gửi tin, đăng bài, thanh toán hay lệnh máy của Team bị chặn rồi thành thẻ xin duyệt; duyệt xong chỉ đúng lời gọi đó chạy một lần, khởi động lại cũng không chạy lại.
+- **Công tắc "Nhóm tự làm, không hỏi"** ở tab Nhóm cho nhóm bạn tin, chạy như trước bản này.
+
 ## [0.206.0] - 2026-10-17
 ### Thêm mới
 - **Gửi thêm việc khi Javis đang làm, như Claude Code và Codex:** gõ rồi gửi tiếp trong lúc Javis đang chạy, việc đang làm không bị dừng. Trước đây tin gõ lúc này bị bỏ qua im lặng.

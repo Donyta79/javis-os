@@ -64,6 +64,12 @@ class TeamApiDeps:
     # (team, files, caption) -> awaitable: pictures among `files` get a pinned text description, read by member turns
     # (team turns are text only). Awaited BEFORE the member turns of the message that carried them (0.192.0).
     describe: Optional[Callable[[dict, list, str], Any]] = None
+    # 0.208.0: what the department mandate needs from the host (team_mandate.MandateEngine deps): brain_root,
+    # kanban_failures, mcp_status, run_test, open_job. None: mandates can be written but are never observed.
+    mandate_deps: Optional[Callable[[], Any]] = None
+    # 0.209.0: runs a `command_ok` acceptance criterion: (command, cwd) -> {ran, exit, output, error}. None: unknown.
+    check_command: Optional[Callable[[str, Any], dict]] = None
+    brain_root: Optional[Callable[[dict], Any]] = None   # team -> Path of its brain (acceptance product paths)
 
 
 async def _body(request: Request) -> dict:
@@ -156,10 +162,26 @@ class TeamApi:
                 projector=self.deps.projector() if self.deps.projector is not None else None,
                 judge=self.deps.judge() if self.deps.judge is not None else None,
                 learning=self.deps.learning() if self.deps.learning is not None else None,
-                contrib_reader=self.deps.contrib_reader, docs_block=self.deps.docs_block)
+                contrib_reader=self.deps.contrib_reader, docs_block=self.deps.docs_block,
+                check_command=self.deps.check_command, brain_root=self.deps.brain_root)
             if self._loop is not None:
                 self._runner._loop, self._runner._loop_thread = self._loop, self._loop_thread
         return self._runner
+
+    def mandates(self):
+        """0.208.0: the department mandate store, in the team store's file."""
+        if getattr(self, "_mandates", None) is None:
+            import team_mandate
+            self._mandates = team_mandate.MandateStore(self.teams().path)
+        return self._mandates
+
+    def mandate_engine(self):
+        if self.deps.mandate_deps is None:
+            return None
+        if getattr(self, "_mandate_engine", None) is None:
+            import team_mandate
+            self._mandate_engine = team_mandate.MandateEngine(self.mandates(), self.runner(), self.deps.mandate_deps())
+        return self._mandate_engine
 
     def kick(self) -> None:
         """Đánh thức bộ điều phối ngay (không đợi nhịp 5 giây). Gọi được từ luồng phụ."""
@@ -264,7 +286,17 @@ class TeamApi:
                     running=[{"id": t["id"], "title": t["title"]} for t in q["running"]],
                     busy=self.runner().busy_view(team["team_id"]),
                     authority=self.runner().authority_view(team["team_id"]),
-                    usage=self.runner().usage(team["team_id"]))
+                    usage=self.runner().usage(team["team_id"]),
+                    mandate=self.mandate_summary(team["team_id"]))
+
+    def mandate_summary(self, team_id: str) -> Optional[dict]:
+        """0.208.0: the team's mandate for the Team tab (None = no mandate), with each source's last state."""
+        import team_mandate
+        st = self.mandates()
+        m = st.get(team_id)
+        if not m:
+            return None
+        return dict(m, sources_state=team_mandate.sources_view(st, m), observing=self.deps.mandate_deps is not None)
 
     def creator(self, team: dict) -> dict:
         """Người tạo, quản lý nhóm (0.142.0): người thật, không phải trợ lý. Javis có một tài khoản chủ máy nên mọi nhóm,
@@ -303,6 +335,27 @@ class TeamApi:
             rep = await r._io(r.recover)
             if rep["resumed"]:
                 self._spawn(r.resume_jobs(rep["resumed"]))
+            for tid in rep.get("rechecks") or []:
+                self._spawn(r.recheck(tid))
+        # 0.207.0: approval requests past their deadline close before dispatch, so their jobs stay stopped with the reason.
+        await r._io(r.expire_approvals)
+        # 0.208.0: department mandates observe their granted sources when due (code only, no model).
+        # In the background with no overlap (review 0.208.0): a slow check command must not hold up team dispatch.
+        me = self.mandate_engine()
+        t_now = asyncio.get_running_loop().time()
+        busy_at = getattr(self, "_mandate_busy_at", 0.0)
+        if me is not None and (not getattr(self, "_mandate_busy", False) or t_now - busy_at > 900):
+            self._mandate_busy, self._mandate_busy_at = True, t_now
+
+            async def _observe():
+                try:
+                    if await r._io(me.tick):
+                        self.kick()
+                except Exception as ex:  # noqa: BLE001 - one broken source must not stop the team loop
+                    print(f"[team mandate] {type(ex).__name__}: {ex}", file=sys.stderr)
+                finally:
+                    self._mandate_busy = False
+            self._spawn(_observe())
         await r.dispatch_once(wait=False)
         # T3 phần J: lần chờ của bộ phán xử quá 30 phút thì hết hạn (nhóm và chat riêng), xử lý nền.
         await r._io(r.judge_tick)
@@ -805,6 +858,8 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
             with runner.accept_lock:
                 shares = runner.result_shares(deps.task_store().get_task(task_id))
                 rev = deps.task_store().team_amend(task_id, text)
+                if rev is not None:
+                    runner.on_job_amended(task_id)
             if rev is None:
                 return _err(409, "Việc đã kết thúc", "The job has already ended")
             runner._state(team_id)
@@ -826,6 +881,10 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
                 return _err(404, "Không có việc này trong nhóm", "No such job in this team")
             if action not in ("retry", "resume"):
                 return _err(400, "Thao tác không hợp lệ", "Invalid action")
+            cur = deps.task_store().get_task(task_id) or {}
+            if cur.get("block_kind") in api.runner().APPROVAL_BLOCKS:
+                return _err(409, "Việc này đang chờ quyết định trên thẻ duyệt; hãy duyệt, sửa yêu cầu hay huỷ việc",
+                            "This job waits for a decision on its approval card; decide, edit or cancel the job")
             if not api.runner().unblock(task_id, action):
                 return _err(409, "Việc không ở trạng thái bị chặn", "The job is not blocked")
             api.kick()
@@ -1135,6 +1194,254 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
             # 0.197.0: the team is read now; other open pages and devices clear its unread badge.
             api.runner()._publish({"type": "team_read", "team_id": team_id})
             return {"ok": True}
+        return await api.io(_do)
+
+    @app.get("/teams/{team_id}/approvals")
+    async def teams_approvals(team_id: str, brain: str = "brain", task_id: str = ""):
+        """Owner approval requests of the team (0.207.0), newest first, or of one job with `task_id`."""
+        def _do():
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            return {"ok": True, "approvals": api.runner().approvals_view(team_id, task_id or None)}
+        return await api.io(_do)
+
+    @app.post("/teams/{team_id}/approvals/{approval_id}/decide")
+    async def teams_approval_decide(team_id: str, approval_id: str, request: Request, brain: str = "brain"):
+        """The owner's decision on one approval card (0.207.0): `decision` approve | reject | changes | revoke, `note`,
+        `decision_key` (one per click: a retry replays the first answer, a second tab gets already_decided) and
+        `expected_rev` (the job revision the card showed). Owner-only by construction: the dashboard's login and CSRF
+        stand in front of this route, and no JAVIS_TEAM directive or chat text reaches it."""
+        body = await _body(request)
+        decision = str(body.get("decision") or "").strip().lower()
+        note = str(body.get("note") or "")[:2000]
+        key = str(body.get("decision_key") or "").strip()[:80]
+        try:
+            rev = int(body["expected_rev"]) if body.get("expected_rev") not in (None, "") else None
+        except (TypeError, ValueError):
+            rev = None
+
+        def _do():
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            if decision not in ("approve", "reject", "changes", "revoke"):
+                return _err(400, "Quyết định không hợp lệ", "Invalid decision")
+            if decision != "revoke" and not key:
+                return _err(400, "Thiếu mã lần bấm", "Missing decision key")
+            if decision in ("reject", "changes") and not note.strip():
+                return _err(400, "Ghi lý do để trợ lý biết hướng sửa", "Add a reason so the assistant knows what to change")
+            out = api.runner().decide_approval(team_id, approval_id, decision, note=note, decision_key=key,
+                                               expected_rev=rev, by="owner")
+            if not out.get("ok"):
+                code = 404 if out.get("error") == "not_found" else 409
+                msgs = {"not_found": ("Không có yêu cầu này", "No such request"),
+                        "already_decided": ("Yêu cầu đã được quyết ở nơi khác", "This request was already decided"),
+                        "stale": ("Việc đã sửa, yêu cầu này không còn hợp lệ", "The job changed; this request is void"),
+                        "expired": ("Yêu cầu đã hết hạn", "This request has expired"),
+                        "job_ended": ("Việc đã kết thúc", "The job has already ended"),
+                        "member_left": ("Người xin đã rời nhóm", "The member who asked left the team"),
+                        "not_revocable": ("Chỉ thu hồi được yêu cầu đã duyệt mà chưa dùng",
+                                          "Only an approved, unused request can be revoked"),
+                        "key_reused": ("Mã lần bấm đã dùng cho yêu cầu khác", "This decision key was used elsewhere")}
+                vi, en = msgs.get(out.get("error") or "", ("Không quyết được", "Could not decide"))
+                return _err(code, vi, en, error=out.get("error"), approval=out.get("approval"))
+            api.kick()
+            return {"ok": True, "status": out.get("status"), "replay": bool(out.get("replay")),
+                    "approval": out.get("approval")}
+        return await api.io(_do)
+
+    @app.post("/teams/{team_id}/work_mode")
+    async def teams_work_mode(team_id: str, request: Request, brain: str = "brain"):
+        """Owner's switch (0.207.0): `mode` gated (outside actions wait for approval, default) or full (the team acts on
+        its own). Takes effect from the next step; a step already running keeps the level it started with."""
+        mode = str((await _body(request)).get("mode") or "").strip().lower()
+
+        def _do():
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            if mode not in ("gated", "full"):
+                return _err(400, "Quyền làm việc không hợp lệ", "Invalid work mode")
+            before = team.get("work_mode") or "gated"
+            api.teams().set_work_mode(team_id, mode)
+            if before != mode:
+                r = api.runner()
+                r._post(api.teams().get(team_id), "Chủ nhóm cho nhóm tự làm hành động ra ngoài, không cần hỏi từng bước."
+                        if mode == "full" else "Chủ nhóm đặt lại: hành động ra ngoài của nhóm phải chờ duyệt.",
+                        author_kind="system", meta={"kind": "work_mode", "work_mode": mode})
+                r._publish({"type": "team_state", "team_id": team_id})
+            return {"ok": True, "work_mode": mode}
+        return await api.io(_do)
+
+    # ───────────── 0.209.0: product acceptance ─────────────
+
+    @app.get("/teams/{team_id}/tasks/{task_id}/acceptance")
+    async def teams_acceptance_get(team_id: str, task_id: str, brain: str = "brain"):
+        def _do():
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            if not _own_task(team_id, task_id):
+                return _err(404, "Không có việc này trong nhóm", "No such job in this team")
+            r = api.runner()
+            return {"ok": True, "acceptance": r.acceptance_view(team, task_id),
+                    "history": r.acceptance.history(task_id) if r.acceptance is not None else []}
+        return await api.io(_do)
+
+    @app.put("/teams/{team_id}/tasks/{task_id}/acceptance")
+    async def teams_acceptance_put(team_id: str, task_id: str, request: Request, brain: str = "brain"):
+        """Owner sets the job's acceptance criteria (owner only: no JAVIS_TEAM directive reaches this)."""
+        body = await _body(request)
+
+        def _do():
+            import team_acceptance
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            if not _own_task(team_id, task_id):
+                return _err(404, "Không có việc này trong nhóm", "No such job in this team")
+            try:
+                got = api.runner().set_acceptance(team_id, task_id, body.get("criteria"), body.get("fix_rounds"))
+                if got.get("recheck"):
+                    api._spawn(api.runner().recheck(task_id))
+            except team_acceptance.AcceptanceError as ex:
+                return _err(400, f"Tiêu chí chưa hợp lệ: {ex}", f"Criteria are not valid: {ex}")
+            api.runner()._system(api.teams().get(team_id), "Chủ nhóm đã đặt tiêu chí nghiệm thu cho việc này.",
+                                 "acceptance_set")
+            return {"ok": True, "acceptance": api.runner().acceptance_view(team, task_id)}
+        return await api.io(_do)
+
+    @app.post("/teams/{team_id}/tasks/{task_id}/acceptance/decide")
+    async def teams_acceptance_decide(team_id: str, task_id: str, request: Request, brain: str = "brain"):
+        body = await _body(request)
+
+        def _do():
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            def _int(v):
+                try:
+                    return int(v) if v not in (None, "") else None
+                except (TypeError, ValueError):
+                    return None
+            out = api.runner().decide_acceptance(team_id, task_id, str(body.get("decision") or "").lower(),
+                                                 note=str(body.get("note") or "")[:2000],
+                                                 revision=_int(body.get("revision")), round_=_int(body.get("round")))
+            if not out.get("ok"):
+                msgs = {"not_found": ("Việc này chưa có tiêu chí nghiệm thu", "This job has no acceptance criteria"),
+                        "not_waiting": ("Việc không ở bước chờ nghiệm thu", "The job is not waiting for acceptance"),
+                        "product_changed": ("Sản phẩm đã đổi sau lần kiểm, cần kiểm lại", "The product changed after the check"),
+                        "note_required": ("Ghi điều cần sửa", "Say what should change"),
+                        "stale_card": ("Thẻ này đã cũ, xem thẻ nghiệm thu mới nhất", "This card is out of date; see the latest one"),
+                        "bad_decision": ("Quyết định không hợp lệ", "Invalid decision")}
+                vi, en = msgs.get(out.get("error") or "", ("Không quyết được", "Could not decide"))
+                return _err(404 if out.get("error") == "not_found" else 409, vi, en, error=out.get("error"))
+            api.kick()
+            return out
+        return await api.io(_do)
+
+    # ───────────── 0.208.0: department mandate ─────────────
+
+    def _mandate_view(team_id: str) -> dict:
+        import team_mandate
+        st = api.mandates()
+        m = st.get(team_id)
+        return {"ok": True, "mandate": m, "sources": team_mandate.sources_view(st, m),
+                "opportunities": [team_mandate.view(o) for o in st.opportunities(team_id, limit=30)],
+                "versions": [{"version": v["version"], "by": v["by"], "at": v["at"]} for v in st.versions(team_id)],
+                "observing": api.deps.mandate_deps is not None}
+
+    @app.get("/teams/{team_id}/mandate")
+    async def teams_mandate_get(team_id: str, brain: str = "brain"):
+        def _do():
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            return _mandate_view(team_id)
+        return await api.io(_do)
+
+    @app.put("/teams/{team_id}/mandate")
+    async def teams_mandate_put(team_id: str, request: Request, brain: str = "brain"):
+        """Owner writes or edits the team's mandate (a new version). Never reachable from a JAVIS_TEAM directive."""
+        body = await _body(request)
+
+        def _do():
+            import team_mandate
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            try:
+                api.mandates().put(team_id, body, by="owner", status=body.get("status") or None)
+            except team_mandate.MandateError as ex:
+                return _err(400, f"Mục tiêu chưa hợp lệ: {ex}", f"The mandate is not valid: {ex}")
+            m = api.mandates().get(team_id)
+            api.runner()._system(api.teams().get(team_id), f"Chủ nhóm đã cập nhật mục tiêu phòng ban (bản {m['version']}).",
+                                 "mandate_edited")
+            api.runner()._state(team_id)
+            return _mandate_view(team_id)
+        return await api.io(_do)
+
+    @app.post("/teams/{team_id}/mandate/status")
+    async def teams_mandate_status(team_id: str, request: Request, brain: str = "brain"):
+        """`status` active | paused | off | revoked. Revoke cancels the mandate's jobs that have not started."""
+        status = str((await _body(request)).get("status") or "").strip().lower()
+
+        def _do():
+            import team_mandate
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            if status not in team_mandate.STATUSES:
+                return _err(400, "Trạng thái không hợp lệ", "Invalid status")
+            try:
+                if status == "revoked":
+                    me = api.mandate_engine() or team_mandate.MandateEngine(api.mandates(), api.runner(), None)
+                    out = me.revoke(team_id, by="owner")
+                else:
+                    api.mandates().set_status(team_id, status, by="owner")
+                    out = {}
+            except team_mandate.MandateError as ex:
+                return _err(409, str(ex), str(ex))
+            label = {"active": "bật", "paused": "tạm dừng", "off": "tắt", "revoked": "thu hồi"}[status]
+            api.runner()._system(api.teams().get(team_id), f"Chủ nhóm đã {label} mục tiêu phòng ban.", "mandate_status")
+            api.runner()._state(team_id)
+            return dict(_mandate_view(team_id), cancelled=out.get("cancelled", []))
+        return await api.io(_do)
+
+    @app.post("/teams/{team_id}/mandate/opportunities/{opp_id}/decide")
+    async def teams_mandate_decide(team_id: str, opp_id: str, request: Request, brain: str = "brain"):
+        decision = str((await _body(request)).get("decision") or "").strip().lower()
+
+        def _do():
+            import team_mandate
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            me = api.mandate_engine() or team_mandate.MandateEngine(api.mandates(), api.runner(), None)
+            if decision == "accept" and me.deps is None:
+                return _err(409, "Máy chủ chưa bật quan sát mục tiêu", "Mandate observation is not enabled")
+            out = me.decide(team_id, opp_id, decision, by="owner")
+            if not out.get("ok"):
+                return _err(404 if out.get("error") == "not_found" else 409, "Không quyết được cơ hội này",
+                            "Could not decide this opportunity", error=out.get("error"))
+            api.kick()
+            return out
+        return await api.io(_do)
+
+    @app.get("/teams/{team_id}/mandate/trace/{opp_id}")
+    async def teams_mandate_trace(team_id: str, opp_id: str, brain: str = "brain"):
+        """mandate version -> observation -> opportunity -> decision -> approvals -> job -> steps (-> acceptance)."""
+        def _do():
+            import team_mandate
+            team, err = _team(team_id, brain)
+            if err:
+                return err
+            me = api.mandate_engine() or team_mandate.MandateEngine(api.mandates(), api.runner(), None)
+            tr = me.trace(team_id, opp_id)
+            if tr is None:
+                return _err(404, "Không có cơ hội này", "No such opportunity")
+            return {"ok": True, "trace": tr}
         return await api.io(_do)
 
     @app.post("/teams/{team_id}/mute")
