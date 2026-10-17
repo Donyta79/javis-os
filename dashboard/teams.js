@@ -380,9 +380,98 @@
       'aria-label="' + esc(tw("teams.rename")) + '" enterkeyhint="done">';
   }
 
+  // ───────────── tag (0.195.0) ─────────────
+  // Owner, 17/10/2026: "nhiều team đang triển khai cùng 1 dự án thì sẽ có thể add vào 1 tag", then "tag em làm dropdown
+  // giống bên cộng sự ... cái gì mà có rồi thì tái sử dụng". So the filter is the Partners page's bar and dropdown, and
+  // tags are set from the row menu with the Partners page's picker (both from tag-picker.js); tags on a row show in its
+  // tooltip, as on a partner card. Tags live on the team (server cleans them: team_store.clean_tags).
+  var TAG_NONE = "\u0001none";   // filter value "no tag yet", like the Partners page's TAG_NONE
+
+  function tagKey(s) { var v = String(s == null ? "" : s); try { v = v.normalize("NFC"); } catch (e) {} return v.toLowerCase(); }
+
+  // Every tag the listed teams carry, once (case folded), with how many teams carry it, sorted by name.
+  function allTags(teams) {
+    var seen = {}, out = [];
+    (teams || []).forEach(function (t) {
+      (t.tags || []).forEach(function (g) {
+        var k = tagKey(g);
+        if (!Object.prototype.hasOwnProperty.call(seen, k)) { seen[k] = { ten: g, key: k, n: 0 }; out.push(seen[k]); }
+        seen[k].n++;
+      });
+    });
+    return out.sort(function (a, b) { return a.ten.localeCompare(b.ten, "vi"); });
+  }
+
+  function hasTag(t, key) {
+    return (t.tags || []).some(function (g) { return tagKey(g) === key; });
+  }
+
+  function filterTeams(teams, key) {
+    if (!key) return teams || [];
+    if (key === TAG_NONE) return (teams || []).filter(function (t) { return !(t.tags || []).length; });
+    return (teams || []).filter(function (t) { return hasTag(t, key); });
+  }
+
+  function tagLabel(teams, key) {
+    if (!key) return tw("teams.tags_all");
+    if (key === TAG_NONE) return tw("ws.tag_none");
+    var g = allTags(teams).filter(function (x) { return x.key === key; })[0];
+    return g ? g.ten : key;
+  }
+
+  // The filter bar on top of the list: the Partners page's bar (JavisTagPicker.barHtml).
+  function tagBarHtml(teams, key) {
+    var TP = tagPicker();
+    if (!TP) return "";
+    return TP.barHtml({ label: tagLabel(teams, key), icon: !key ? "layers" : key === TAG_NONE ? "circle" : "tag",
+                        canClear: !!key, pickTitle: tw("teams.tag_pick_title"), clearTitle: tw("ws.tag_clear_title") });
+  }
+
+  // Rows of the filter dropdown (JavisChatSide.menu, the same dropdown the Partners page opens).
+  function tagMenuRows(teams, key, pick) {
+    var tags = allTags(teams);
+    var none = (teams || []).filter(function (t) { return !(t.tags || []).length; }).length;
+    var rows = [
+      { label: tw("teams.tags_all"), icon: "layers", right: String((teams || []).length), on: !key, run: function () { pick(""); } },
+      { label: tw("ws.tag_none"), icon: "circle", right: String(none), on: key === TAG_NONE, run: function () { pick(TAG_NONE); } },
+    ];
+    if (tags.length) rows.push({ sep: true });
+    tags.forEach(function (g) {
+      rows.push({ label: g.ten, icon: "tag", right: String(g.n), on: key === g.key, run: function () { pick(g.key); } });
+    });
+    return rows;
+  }
+
+  // Rows of the "Tag" picker in a team's row menu: every tag in the list plus the team's own, checked when it has it.
+  function tagPickRows(team, teams) {
+    var mine = {}, out = [];
+    (team.tags || []).forEach(function (g) { mine[tagKey(g)] = g; });
+    var seen = {};
+    allTags(teams).forEach(function (g) { seen[g.key] = 1; out.push({ ten: g.ten, key: g.key, on: !!mine[g.key] }); });
+    Object.keys(mine).forEach(function (k) { if (!seen[k]) out.push({ ten: mine[k], key: k, on: true }); });
+    return out.sort(function (a, b) { return a.ten.localeCompare(b.ten, "vi"); });
+  }
+
+  function tagPicker() {
+    if (typeof window !== "undefined" && window.JavisTagPicker) return window.JavisTagPicker;
+    try { return require("./tag-picker.js"); } catch (e) { return null; }
+  }
+
+  // The team the owner worked in last (0.195.0): the highest `owner_at` (sent a message or opened it, on any device).
+  // Teams never touched since this version fall back to their latest message, then their last update.
+  function lastWorkedTeam(teams) {
+    var best = null, bestAt = -1;
+    (teams || []).forEach(function (t) {
+      var at = Number(t.owner_at) || 0;
+      var rank = at ? 2e12 + at : Number((t.last || {}).ts || t.updated_at || 0);
+      if (rank > bestAt) { bestAt = rank; best = t; }
+    });
+    return best;
+  }
+
   // `menuId`: the team whose menu is open (the "..." button, long press on a phone, right click on a computer): Pin or
   // Unpin, Rename, Delete. `renaming`: the team whose name is being edited in place.
-  function teamListHtml(teams, activeId, now, menuId, renaming) {
+  function teamListHtml(teams, activeId, now, menuId, renaming, tagMode) {
     if (!teams || !teams.length) return guideHtml();
     return teams.map(function (t) {
       var on = t.team_id === activeId;
@@ -396,14 +485,20 @@
       var pin = pinned ? '<span class="tm-pinned" title="' + esc(tw("teams.pinned")) + '" aria-label="' +
         esc(tw("teams.pinned")) + '">' + ic("pin") + "</span>" : "";
       var open = menuId === t.team_id;
-      var menu = open ? '<div class="tm-row-menu" role="menu" aria-label="' + esc(tw("teams.row_menu")) + '">' +
+      // 0.195.0: "Tag" opens the Partners page's tag picker right in this menu (tagMode), like a partner's row menu.
+      var picker = open && tagMode === t.team_id && tagPicker();
+      var menu = !open ? "" : picker ? '<div class="tm-row-menu tm-tag-menu" role="menu" aria-label="' + esc(tw("ws.tag_menu")) + '">' +
+        // Suggestions come from EVERY team, not only those the filter shows.
+        picker.pickerHtml(tagPickRows(t, (S && S.teams && S.teams.length ? S.teams : teams))) + "</div>" : '<div class="tm-row-menu" role="menu" aria-label="' + esc(tw("teams.row_menu")) + '">' +
         '<button type="button" role="menuitem" data-pin-team="' + id + '" data-on="' + (pinned ? "0" : "1") + '">' + ic("pin") +
         esc(tw(pinned ? "teams.unpin_team" : "teams.pin_team")) + "</button>" +
+        '<button type="button" role="menuitem" data-tag-team="' + id + '">' + ic("tag") + esc(tw("ws.tag_menu")) + "</button>" +
         '<button type="button" role="menuitem" data-rename-team="' + id + '">' + ic("pencil") + esc(tw("teams.rename")) + "</button>" +
         '<button type="button" role="menuitem" class="tm-danger" data-delete-team="' + id + '">' + ic("trash-2") +
-        esc(tw("teams.delete_team")) + "</button></div>" : "";
+        esc(tw("teams.delete_team")) + "</button></div>";
+      var tagTip = (t.tags || []).length ? ' title="' + esc(t.name + "\n" + tw("teams.tags_title") + ": " + t.tags.join(", ")) + '"' : "";
       return '<div class="tm-team-wrap' + (open ? " is-menu" : "") + '"><button type="button" class="tm-team" data-team="' + id + '"' +
-        (on ? ' aria-current="true"' : "") + ">" +
+        (on ? ' aria-current="true"' : "") + tagTip + ">" +
         teamAvatarHtml(t, 44) + '<span class="tm-team-main"><span class="tm-team-top"><span class="tm-team-name">' + esc(t.name) +
         "</span>" + pin + '<span class="tm-team-time">' + esc(timeShort(last.ts || t.updated_at, now)) + "</span></span>" +
         '<span class="tm-team-bottom"><span class="tm-team-sub">' + esc(previewText(t)) + "</span>" + teamBadge(t) +
@@ -1318,7 +1413,8 @@
       openMember: null, advOpen: false, turns: [], sideOpener: null, rowMenu: null, focusRowMenu: false, swallowClick: false,
       picked: [], retrying: {}, pickSt: null, pickOpener: null, pickHost: null, roster: [],
       renaming: "", renamingHead: false, replyTo: null, plusOpen: false, dict: null, dictBase: "", dictState: "idle",
-      atts: [], folder: null, info: null, typing: [], pinned: [], pinsOpen: false };
+      atts: [], folder: null, info: null, typing: [], pinned: [], pinsOpen: false, tagFilter: readTagFilter(),
+      autoOpened: false };
   }
 
   function teamUrl(path) { return "/teams/" + q(S.activeId) + (path || ""); }
@@ -1353,6 +1449,7 @@
       '<div class="tm-page" data-view="' + S.view + '" data-side="0">' +
       '<aside class="tm-list"><div class="tm-bar tm-list-bar"><strong class="tm-list-title">' + esc(tw("page.teams.label")) + "</strong>" +
       '<button type="button" class="ws-btn tm-new">' + ic("plus") + esc(tw("teams.create")) + "</button></div>" +
+      '<div class="cside-proj ws-nhom-bar tm-tagbar" hidden></div>' +
       '<div class="tm-teams"></div><button type="button" class="ws-btn tm-more-teams" hidden>' + esc(tw("teams.next_page")) + "</button></aside>" +
       '<section class="tm-chat"><div class="tm-bar tm-chat-head"></div><div class="tm-search" hidden></div>' +
       '<div class="tm-banners"></div><div class="tm-jobs" hidden></div>' +
@@ -1365,7 +1462,20 @@
   function drawList() {
     var box = S.el.querySelector(".tm-teams");
     var rd = renameDraft(box);
-    if (box) box.innerHTML = S.loaded || S.teams.length ? teamListHtml(S.teams, S.activeId, undefined, S.rowMenu, S.renaming) : "";
+    // 0.195.0: the tag filter. A tag no team carries any more (removed elsewhere) drops back to All.
+    if (S.tagFilter && S.tagFilter !== TAG_NONE && !allTags(S.teams).some(function (x) { return x.key === S.tagFilter; })) {
+      setTagFilter("");
+    }
+    var tb = S.el.querySelector(".tm-tagbar");
+    // Shown once a team has a tag (or a filter is on): with no tag anywhere the bar would only say "All teams".
+    if (tb) {
+      tb.innerHTML = allTags(S.teams).length || S.tagFilter ? tagBarHtml(S.teams, S.tagFilter) : "";
+      tb.hidden = !tb.innerHTML;
+    }
+    var shown = filterTeams(S.teams, S.tagFilter);
+    if (box) box.innerHTML = S.loaded || S.teams.length ? (S.tagFilter && !shown.length ? '<p class="tm-empty">' +
+      esc(tw("teams.tags_none")) + "</p>" : teamListHtml(shown, S.activeId, undefined, S.rowMenu, S.renaming, S.tagMenu)) : "";
+    bindTagPicker(box);
     if (S.renaming) focusRename(box, rd);
     if (box && S.rowMenu && S.focusRowMenu) {
       S.focusRowMenu = false;
@@ -2088,7 +2198,14 @@
       if (pendingOpen) {
         var want = pendingOpen, wantTask = pendingTask;
         pendingOpen = null; pendingTask = "";
+        S.autoOpened = true;
         openTeam(want, wantTask);
+      } else if (!append && !S.autoOpened && !S.activeId) {
+        // 0.195.0 (owner, 17/10/2026: "khi vào team thì sẽ vào đoạn chat mà chủ team đang làm việc gần nhất"): opening
+        // the page lands in the team worked in last. Once per visit: going back to the list stays on the list.
+        S.autoOpened = true;
+        var lastT = lastWorkedTeam(S.teams);
+        if (lastT) openTeam(lastT.team_id);
       }
     });
   }
@@ -2197,6 +2314,54 @@
     setNote("");
     drawAll(true);
     Promise.all([loadTeam(), loadQueue(), loadMsgs(false)]).then(function () { if (S.activeId === id) { drawAll(true); loadFolder(); } });
+    markOpened(id);
+  }
+
+  // 0.195.0: the owner works in this team now, so next visit (any device) opens it. Best effort: a failure changes nothing.
+  function markOpened(id) {
+    var t = S.teams.filter(function (x) { return x.team_id === id; })[0];
+    if (t) t.owner_at = Date.now() / 1000;
+    call("POST", "/teams/" + q(id) + "/opened", {}).then(function () {}, function () {});
+  }
+
+  // The chosen tag filter is a per-device convenience (localStorage); a blocked storage only forgets it.
+  var TAG_FILTER_KEY = "javis.teams.tagFilter";
+  function readTagFilter() {
+    try { return (typeof localStorage !== "undefined" && localStorage.getItem(TAG_FILTER_KEY)) || ""; } catch (e) { return ""; }
+  }
+  function setTagFilter(tag) {
+    S.tagFilter = String(tag || "");
+    try { if (typeof localStorage !== "undefined") localStorage.setItem(TAG_FILTER_KEY, S.tagFilter); } catch (e) {}
+  }
+
+  // The "Tag" picker of a team's row menu (0.195.0): tapping a tag adds or removes it, the box adds a new one; the menu
+  // stays open so several tags can be set in one go, exactly like a partner's row menu.
+  function bindTagPicker(box) {
+    var TP = tagPicker();
+    var m = box && S.tagMenu ? box.querySelector(".tm-tag-menu") : null;
+    if (!TP || !m) return;
+    var id = S.tagMenu;
+    TP.bind(m, {
+      back: function () { S.tagMenu = null; S.focusRowMenu = true; drawList(); },
+      add: function (ten) { changeTags(id, [ten], [], TP.FOCUS_INPUT); },
+      toggle: function (ten, on, key) { changeTags(id, on ? [] : [ten], on ? [key] : [], key); },
+    }, S.tagFocus);
+    S.tagFocus = null;
+  }
+
+  function changeTags(id, add, removeKeys, focusKey) {
+    var t = S.teams.filter(function (x) { return x.team_id === id; })[0];
+    if (!t || S.tagBusy) return;
+    var next = (t.tags || []).filter(function (g) { return removeKeys.indexOf(tagKey(g)) < 0; }).concat(add);
+    S.tagBusy = true;
+    call("PATCH", "/teams/" + q(id), { tags: next }).then(function (r) {
+      S.tagBusy = false;
+      if (r.code !== 200 || !r.j || !r.j.team) return act(r);
+      t.tags = r.j.team.tags || [];
+      if (S.team && S.team.team_id === id) S.team.tags = t.tags;
+      S.tagFocus = focusKey;
+      drawList();
+    }, function () { S.tagBusy = false; });
   }
 
   // ───────────── 0.191.0: files, working folder and the team info panel ─────────────
@@ -2675,6 +2840,7 @@
   // hay sau khi chọn.
   function openRowMenu(id) {
     S.rowMenu = id;
+    S.tagMenu = null;
     S.focusRowMenu = true;
     drawList();
   }
@@ -2682,6 +2848,7 @@
   function closeRowMenu(focusRow) {
     var id = S.rowMenu;
     S.rowMenu = null;
+    S.tagMenu = null;
     drawList();
     if (focusRow && id) {
       var row = S.el.querySelector('.tm-team[data-team="' + id + '"]');
@@ -2870,6 +3037,13 @@
       return openRowMenu(d.rowMenu);
     }
     if (d.renameTeam) { S.rowMenu = null; S.renaming = d.renameTeam; drawList(); return; }
+    if (d.tagTeam) { S.tagMenu = d.tagTeam; S.tagFocus = null; drawList(); return; }
+    if (t.classList && t.classList.contains("cs-proj-cur") && t.closest(".tm-tagbar")) {
+      var cs = typeof window !== "undefined" && window.JavisChatSide;
+      if (cs && cs.menu) cs.menu(t, tagMenuRows(S.teams, S.tagFilter, function (k) { setTagFilter(k); drawList(); }));
+      return;
+    }
+    if (t.classList && t.classList.contains("cs-proj-x") && t.closest(".tm-tagbar")) { setTagFilter(""); drawList(); return; }
     if (d.deleteTeam) { if (S.rowMenu) closeRowMenu(); return deleteTeam(d.deleteTeam); }
     if (d.renameHead) { S.renamingHead = true; drawHead(); return; }
     if (d.finOpen) { S.openFin = S.openFin === d.finOpen ? null : d.finOpen; drawSide(); return; }
@@ -3551,7 +3725,9 @@
     hoverActsHtml: hoverActsHtml, bodyHtml: bodyHtml, plainPreview: plainPreview, previewText: previewText,
     nextReaction: nextReaction, REACTIONS: REACTIONS, authorityHtml: authorityHtml, readGrant: readGrant,
     searchResultsHtml: searchResultsHtml, replyStatusHtml: replyStatusHtml, headLine: headLine,
-    typingHtml: typingHtml, pinsHtml: pinsHtml, markMentions: markMentions, replyRefHtml: replyRefHtml };
+    typingHtml: typingHtml, pinsHtml: pinsHtml, markMentions: markMentions, replyRefHtml: replyRefHtml,
+    allTags: allTags, filterTeams: filterTeams, tagBarHtml: tagBarHtml, tagMenuRows: tagMenuRows, tagPickRows: tagPickRows,
+    lastWorkedTeam: lastWorkedTeam, TAG_NONE: TAG_NONE };
   if (typeof window !== "undefined") window.JavisTeams = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

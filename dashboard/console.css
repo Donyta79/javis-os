@@ -2551,9 +2551,9 @@ body.on-teams .cview-head { display: none; }
 .tm-row-menu { position: absolute; top: 100%; right: 8px; z-index: 6; display: flex; flex-direction: column; min-width: 180px;
   padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); }
 .tm-row-menu[hidden] { display: none; }
-.tm-row-menu button { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: none; border-radius: 8px;
-  background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
-.tm-row-menu button:hover, .tm-row-menu button:focus-visible { background: var(--surface-2); }
+.tm-row-menu:not(.tm-tag-menu) button { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: none;
+  border-radius: 8px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.tm-row-menu:not(.tm-tag-menu) button:hover, .tm-row-menu:not(.tm-tag-menu) button:focus-visible { background: var(--surface-2); }
 
 /* Danh sách nhóm kiểu app chat: ảnh, tên, giờ, dòng xem trước, nhãn trạng thái. */
 .tm-team { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 8px 10px; min-height: 60px;
@@ -3631,3 +3631,10 @@ button.tm-quote-ref:hover, button.tm-quote-ref:focus-visible { border-color: var
 .aj-arch-toggle { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 4px 0; font: inherit;
   font-size: 13px; font-weight: 700; color: var(--text2); cursor: pointer; }
 .aj-arch-toggle svg { width: 14px; height: 14px; }
+/* 0.195.0 team tags (owner, 17/10/2026: "làm dropdown giống bên cộng sự ... tái sử dụng"): the filter bar and the row-menu
+   tag picker are the Partners page's own (tag-picker.js, .cs-proj-* and .ws-menu-it / .ws-tag-new). Only placing them
+   here: the bar sits under the list title, the picker inside the team's row menu. */
+.tm-tagbar { padding: 0 12px 8px; }
+.tm-tagbar[hidden] { display: none; }
+.tm-tag-menu { padding: 5px; min-width: 220px; max-height: min(420px, 70vh); overflow-y: auto; }
+.tm-tag-menu { background: var(--bg2); }

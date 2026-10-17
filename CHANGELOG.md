@@ -6,6 +6,12 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.195.0] - 2026-10-17
+### Thêm mới
+- **Vào Team là gặp ngay nhóm đang làm:** mở trang Team thì tự mở nhóm bạn làm việc gần nhất (nhóm vừa nhắn hay vừa mở, trên máy nào cũng vậy), khỏi phải tìm lại.
+- **Gắn tag cho nhóm:** bấm "..." ở một nhóm, chọn **Gắn tag**, y hệt cách gắn tag cho cộng sự. Nhiều nhóm làm chung một dự án thì gắn cùng một tag.
+- **Lọc nhóm theo tag:** ô lọc trên đầu danh sách nhóm giống hệt bên Cộng sự: Tất cả nhóm, Chưa gắn tag, rồi từng tag kèm số nhóm.
+
 ## [0.194.1] - 2026-10-17
 ### Cải thiện
 - **Nút của tin trong Team nằm dưới bong bóng:** giờ gửi, Trả lời (trích dẫn), Sao chép và Ghim xếp thành một hàng ngay dưới tin, giống khung trò chuyện chính, thay vì nằm bên phải bong bóng nhìn rối mắt.
