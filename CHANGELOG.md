@@ -6,6 +6,17 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.194.0] - 2026-10-17
+### Thêm mới
+- **Team làm được việc thật:** khi giao việc trong Team, lượt **Làm** và **Hỗ trợ** của thành viên có đủ công cụ như chat riêng: đọc và ghi file trong bộ não và thư mục làm việc của nhóm, gọi kết nối (MCP), chạy skill. Thành viên tự làm rồi trả kết quả thật (file, link), không còn bảo bạn sang chat riêng. Các lượt Làm trên cùng một bộ não chạy lần lượt nên không ai sửa đè file của nhau.
+
+### Sửa lỗi
+- **Bớt "Mất kết nối tới máy chủ" kéo dài:** một tab chết (điện thoại ngủ, rớt Wi-Fi) không còn làm treo lượt chat của mọi tab khác; trang tự thử nối lại khi lần nối bị kẹt, và chờ máy chủ bận lâu hơn trước khi coi là mất kết nối.
+- **Bắt được thủ phạm lần sau:** máy chủ tự ghi lại đoạn code làm nó đơ và các lần tự khởi động lại bất thường, xem ở `/health/loop`.
+
+### Cải thiện
+- **Trò chuyện vẫn nhanh và rẻ:** câu trả lời trò chuyện thường trong Team vẫn chỉ bằng chữ. Cần đụng tới file hay kết nối thì thành viên đề nghị giao thành việc.
+
 ## [0.193.0] - 2026-10-16
 ### Thêm mới
 - **Việc đã xong không tự biến mất:** ở tab Công việc của cộng sự và tab Việc trong Team, việc xong nằm ở mục riêng, bấm **Mở** xem báo cáo (ai làm phần nào, kết quả ra sao). Bấm **Đã hoàn thành / Done** thì việc chuyển vào **Lưu trữ**, không bị xoá; chỉ trong Lưu trữ mới có **Xoá** và **Xoá tất cả**.

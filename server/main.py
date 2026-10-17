@@ -15192,7 +15192,12 @@ async def websocket_endpoint(ws: WebSocket):
             except Exception:
                 pass
 
-    _CHAT_RUNTIME.add_client(client_id, send_client)
+    def _drop_client():
+        # The runtime gave up on this page (its sends were stuck, chat_runtime.STUCK_S): close the socket so the page
+        # reconnects and resyncs from `hello` instead of hanging on a half-dead connection.
+        asyncio.ensure_future(_real_ws.close(code=1011))
+
+    _CHAT_RUNTIME.add_client(client_id, send_client, _drop_client)
     await send_client({
         "type": "hello",
         "stop_tag": conn_tag,
@@ -23114,6 +23119,9 @@ def _team_reasoning(eng, level, prompt):
 
 
 _TEAM_ENGINE_BUILD_REAL = team_engine.build
+_TEAM_ENGINE_BUILD_TOOLS_REAL = team_engine.build_tools
+# Level of a team Work/Help turn (0.194.0): the same `full` as a private chat with the member (_muc_quyen_luot_chat).
+TEAM_WORK_MODE = "full"
 
 
 def _team_engine_for(team, agent_key, role):
@@ -23135,6 +23143,37 @@ def _team_engine_for(team, agent_key, role):
     spec = team_engine.choose_spec(
         info.get("model") or "", info.get("model_provider") or "", _effective_main(settings),
         _agent_model_provider, lambda sp: aux_engine.availability(sp, settings))
+    tool_spec = team_engine.choose_spec(
+        info.get("model") or "", info.get("model_provider") or "", _effective_main(settings),
+        _agent_model_provider, lambda sp: aux_engine.availability(sp, settings), tools=True)
+
+    def _build_tools(system, tag):
+        # 0.194.0: a Work/Help step of a job runs like a private chat with this member: cwd is the team's working folder
+        # (or the brain), the hub is attached at the private chat's level, files of the brain go through `javis_vault`.
+        if os.environ.get("JAVIS_NO_REAL_TEAM_ENGINE") == "1" and team_engine.build_tools is _TEAM_ENGINE_BUILD_TOOLS_REAL:
+            raise team_runner.EngineUnavailable("JAVIS_NO_REAL_TEAM_ENGINE: không dựng engine nhóm thật")
+        vault = str(_brain_root(root))
+        cwd = ""
+        try:
+            cwd = coding_store.cwd_cua_phien(team.get("session_id") or "") if team.get("session_id") else ""
+        except Exception:  # noqa: BLE001 - a broken folder binding falls back to the brain
+            cwd = ""
+        base = claude_engine(system_prompt=system, cwd=cwd or vault, tag=tag)
+        _apply_mcp(base, mode=TEAM_WORK_MODE, brain=root)
+        try:
+            eng = team_engine.build_tools(tool_spec, base, tag, settings, mode=TEAM_WORK_MODE,
+                                          codex_profile=_write_codex_profile)
+        except team_engine.TeamEngineUnavailable as ex:
+            raise team_runner.EngineUnavailable(ex.reason)
+        if tool_spec.get("provider") == aux_engine.CODEX:
+            try:
+                openai_oauth.write_codex_auth()
+            except Exception:  # noqa: BLE001 - Codex reports its own sign-in error
+                pass
+        avail = getattr(eng, "is_available", None)
+        if callable(avail) and not avail():
+            raise team_runner.EngineUnavailable(f"engine {tool_spec['provider']} chưa sẵn sàng (kiểm tra trang Models)")
+        return eng
 
     def _build(system, tag):
         if os.environ.get("JAVIS_NO_REAL_TEAM_ENGINE") == "1" and team_engine.build is _TEAM_ENGINE_BUILD_REAL:
@@ -23156,10 +23195,16 @@ def _team_engine_for(team, agent_key, role):
         # tiến trình engine của lượt này TRƯỚC khi khoá bận được nhả, để Thử lại không chạy song song với một tiến trình
         # cũ còn sống (review 0.142.0, #2).
         tag = f"team-{str(req['team_id'])[-8:]}-{str(req.get('turn_id') or '')[-10:]}"
-        eng = await asyncio.to_thread(_build, req["system"], tag)
+        tools_on = bool(req.get("tool_turn"))
+        used = tool_spec if tools_on else spec
+        eng = await asyncio.to_thread(_build_tools if tools_on else _build, req["system"], tag)
         prompt = _team_reasoning(eng, info.get("reasoning") or AGENT_REASONING_DEFAULT, req["prompt"])
-        await req["engine_started"]()
-        outcome = team_runner.TextOnlyOutcome()
+        if tools_on:
+            # The tool spec can differ from the text one (Grok Build, Antigravity run tool turns): mark the real engine.
+            await req["engine_started"](used["provider"], used["model"])
+        else:
+            await req["engine_started"]()
+        outcome = team_runner.ToolTurnOutcome() if tools_on else team_runner.TextOnlyOutcome()
         stream = eng.query(prompt)
         try:
             async for ev in stream:
@@ -23198,7 +23243,7 @@ def _team_engine_for(team, agent_key, role):
             _log_agent_run(root, slug, "", clean)
 
         return {"text": clean, "tokens_in": res["tokens_in"], "tokens_out": res["tokens_out"],
-                "lessons": lessons, "commit": commit, "engine_note": spec.get("note") or ""}
+                "lessons": lessons, "commit": commit, "engine_note": used.get("note") or ""}
 
     run.marks_engine = True
     return spec["provider"], spec["model"], run
@@ -23653,8 +23698,9 @@ async def _team_describe(team, pics, caption):
         pin=lambda fid: store.set_session_file_pinned(sid, fid, True))
 
 
-def _team_docs_block(team):
-    """Documents, links and the pinned working folder of a team, for every member turn (0.191.0, team_docs.block)."""
+def _team_docs_block(team, tools=False):
+    """Documents, links and the pinned working folder of a team, for every member turn (0.191.0, team_docs.block).
+    `tools=True`: the wording of a Work/Help turn that can open them itself (0.194.0)."""
     import team_docs
     sid = team.get("session_id") or ""
     if not sid:
@@ -23663,7 +23709,7 @@ def _team_docs_block(team):
         store = get_store()
         files, links = store.list_session_files(sid), store.list_session_links(sid)
         listed, loaded = _liet_ke_tai_lieu(team.get("brain_id") or "brain", files, links) if (files or links) else ([], [])
-        return team_docs.block(listed, loaded, coding_store.cwd_cua_phien(sid))
+        return team_docs.block(listed, loaded, coding_store.cwd_cua_phien(sid), tools=bool(tools))
     except Exception as e:  # noqa: BLE001 - a broken document must not stop the team from answering
         print(f"[team docs] {type(e).__name__}: {e}", file=sys.stderr)
         return ""
@@ -24810,3 +24856,24 @@ async def share_chat_of(session_id: str = Query(...)):
     """Hội thoại này đã có link chưa? Nút Chia sẻ trong khung chat hỏi câu này."""
     ban = share_store.cua_hoi_thoai(session_id)
     return {"ok": True, "share": ({"token": ban["token"], "path": "/s/" + ban["token"]} if ban else None)}
+
+
+# ── Event loop watchdog (0.194.0, owner 17/10/2026: "Mất kết nối tới máy chủ" more and more often) ──
+# Synchronous work on the event loop freezes every socket at once; the watchdog names the code (loop_watch.py).
+import loop_watch  # noqa: E402
+
+
+@app.on_event("startup")
+async def _start_loop_watch():
+    loop_watch.start(state_dir=str(cfgmod.STATE_DIR))
+
+
+@app.on_event("shutdown")
+async def _stop_loop_watch():
+    loop_watch.stop()
+
+
+@app.get("/health/loop")
+async def health_loop():
+    """Recent event-loop freezes with the stack where the loop was stuck (loop_watch). Read only."""
+    return loop_watch.report()
