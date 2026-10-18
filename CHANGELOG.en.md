@@ -8,6 +8,17 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.216.0] - 2026-10-18
+### Added
+- **The bot inbox can search by phone number.** 0912 345 678, 84912345678 and +84 912 345 678 all find the same person.
+- **A number the inbox does not know yet is looked up on Zalo:** type a full number and Javis asks the connected personal Zalo accounts whose number it is, then shows the chat with that person. The number is kept on the customer, so the next search finds it at once.
+- **Someone who never wrote is reported plainly:** "This number is Lan's Zalo, no conversation yet". A number with no Zalo account, or whose owner turned off search by phone, is reported too.
+- **Zalo is not asked twice:** answers are remembered (30 days when found, 1 day when not). At most 20 numbers are looked up per hour, because Zalo caps lookups per day.
+- **Swipe a message to the left to quote it (phone):** like Zalo, pull a bubble to the left until the orange quote mark shows, then lift your finger, and the message lands in the "Quoting" box above the input. Works on Javis's messages and your own, in the main chat and in chats with Javis Core or a partner. A short swipe or scrolling up and down does nothing.
+
+### Fixed
+- **The phone menu no longer closes by itself and leaves the screen dim:** on iPhone the menu slid in, then vanished, leaving only the dark backdrop. The menu now has a solid background instead of a blur (Safari can stop drawing a box that is blurred and sliding at once). The dim layer always goes with the menu, so closing the menu clears it. A single tap counted as two clicks no longer closes the menu it just opened.
+
 ## [0.214.0] - 2026-10-18
 ### Fixed
 - **Antigravity no longer blames Google when a turn runs too long:** a turn over 15 minutes is stopped by Antigravity CLI itself, and Javis used to report "Google is having a temporary problem, retried 2 times" without retrying at all. The message now says the turn ran too long, finished steps keep their results, and you can send "continue" or give the job to the background queue.
