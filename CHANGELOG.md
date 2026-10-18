@@ -6,6 +6,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.213.0] - 2026-10-18
+### Thêm mới
+- **Nhắn thêm khi Javis đang làm, giờ có cả trên Telegram, Discord, Slack, Lark, Messenger và Zalo:** trước đây bot báo "đang xử lý câu trước, gửi /stop" rồi bỏ tin của bạn. Giờ tin được giữ lại, không mất tin nào.
+- **Codex (gói ChatGPT) giờ đọc tin mới ngay trong lượt**, trên web lẫn các kênh, như nút Enter của ứng dụng Codex: không phải đợi xong việc mới làm tin của bạn nữa. Tắt bằng `JAVIS_CODEX_STEER=0` nếu cần.
+- **Trên kênh nhắn tin, bot đáp một dòng ngắn** cho biết Javis đọc tin ngay ở bước kế tiếp (Claude Code, Codex, các bộ não dùng API key) hay làm ngay sau câu đang trả lời (Grok, Antigravity).
+- **/stop dừng việc đang làm và bỏ luôn các tin đang chờ.** Bot chăm sóc khách giữ nguyên cách cũ: im lặng, gộp tin khách nhắn thêm vào lượt sau.
+
 ## [0.211.0] - 2026-10-17
 ### Cải thiện
 - **Thẻ Claude Code nói đúng một việc khi máy chưa cài:** một khung hướng dẫn duy nhất (Docker thì cập nhật Javis, cài tay thì một lệnh để chép), chỉ còn nút Kiểm tra lại. Bỏ nút Đăng nhập vốn chỉ báo lỗi, bỏ dòng phiên bản và nút Cập nhật của một chương trình chưa có.
