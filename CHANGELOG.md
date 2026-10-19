@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.225.0] - 2026-10-19
+### Cải thiện
+- **Đổi bộ não, tải note nhanh hơn nhiều.** Đo trên bộ não 2000 note qua mạng như VPS: mở lần đầu từ 1,6 giây xuống 0,24 giây, quay lại bộ não vừa xem còn 0,12 giây. Javis không đọc lại các note không đổi, nhớ cả sau khi khởi động lại, và quay lại bộ não cũ thì không phải tải lại.
+- **Cả hệ thống nhẹ hơn khi chạy trên VPS:** mọi danh sách và trang chủ được nén trước khi gửi, dữ liệu đồ thị nhỏ đi khoảng 16 lần, trang chủ nhỏ đi 3 lần. Luồng chat vẫn hiện từng chữ như cũ.
+
 ## [0.223.0] - 2026-10-19
 ### Thêm mới
 - **Ghim ngay trong kết quả tìm hội thoại.** Gõ tìm ở cột Lịch sử (trang Trò chuyện, lịch sử của trợ lý và Javis Core, trang Coding) thì mỗi kết quả có nút ghim, cuộc đã ghim đứng đầu kết quả. Khỏi phải xoá ô tìm rồi lục lại danh sách.
