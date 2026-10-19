@@ -6,6 +6,7 @@ Javis KHÔNG gọi Anthropic API trực tiếp. Mọi reasoning + tool calling �
 `claude` CLI đã cài trên máy → tự kế thừa MCP, skills, auth.
 """
 import brain_seed_i18n   # file hạt giống của brain mới theo ngôn ngữ người dùng
+import brain_label   # tên hiển thị của brain, tách khỏi thư mục (0.219.0)
 import localefmt   # múi giờ theo cấu hình, thay UTC+7 nhúng cứng
 import html as html_mod   # escape lời báo lỗi OAuth trên trang callback (biến cục bộ `html` che tên module)
 import posixpath
@@ -5883,7 +5884,7 @@ def memory_items(brain: str = Query("brain")):
     """What this brain remembers, with each memory's type, origin, source and dates (0.188.0, spec 13)."""
     md = _brain_memory_dir(brain)
     return {"items": memory_control.list_memories(md), "learning": memory_control.learning_enabled(md),
-            "forgotten": len(memory_control.forgotten(md)), "brain": Path(_brain_root(brain)).name}
+            "forgotten": len(memory_control.forgotten(md)), "brain": brain_label.display(_brain_root(brain))}
 
 
 @app.post("/memory/edit")
@@ -6613,7 +6614,9 @@ def _list_brains_sync() -> dict:
                 is_default = p.resolve() == default_resolved
             except OSError:
                 is_default = False
-            out.append({"name": p.name, "path": str(p), "notes": notes,
+            # `name` stays the FOLDER (the brain's address: delete, /brains/<folder>/..., backups); `label` is what to show
+            # (0.219.0, brain_label): a rename sets the label and never moves the folder.
+            out.append({"name": p.name, "label": brain_label.display(p), "path": str(p), "notes": notes,
                         "notes_capped": notes >= _BRAINS_MD_CAP,
                         "is_default": is_default})
     except Exception as e:
@@ -6643,6 +6646,40 @@ async def new_brain(name: str = Form(...)):
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
     git_brain.clear_tombstone(BRAINS_DIR, safe)   # dựng lại não cùng tên -> gỡ giấy báo tử để không bị xoá oan
     return {"ok": True, "name": safe, "path": str(root)}
+
+
+@app.post("/brains/label")
+async def brain_set_label(brain: str = Form(...), label: str = Form("")):
+    """Đổi TÊN HIỂN THỊ của một brain (0.219.0). Thư mục KHÔNG đổi, nên mọi địa chỉ dựng trên nó (lựa chọn đã lưu, bot,
+    nhắc việc, vòng lặp, việc Kanban, phiên chat, sao lưu git, link `/brains/<thư mục>/...` trong note và chat) vẫn đúng.
+    Áp dụng được cả cho Brain mặc định. `brain`: "brain", "path:<thư mục>" hoặc tên thư mục trong BRAINS_DIR. `label`
+    rỗng hoặc trùng tên thư mục = bỏ tên riêng, quay về tên thư mục."""
+    b = (brain or "").strip()
+    if b == "brain" or not b:
+        root = _default_brain_dir()
+    else:
+        raw = b[5:] if b.startswith("path:") else str(Path(BRAINS_DIR) / _safe_brain_name(b))
+        root = Path(raw)
+    try:
+        root = root.resolve()
+        base = Path(BRAINS_DIR).resolve()
+    except OSError:
+        return JSONResponse({"ok": False, "error": localefmt.chu("Brain không tồn tại", "Brain does not exist")}, status_code=404)
+    if root == base or base not in root.parents or not root.is_dir():
+        return JSONResponse({"ok": False, "error": localefmt.chu("Brain không tồn tại hoặc nằm ngoài phạm vi quản lý",
+                                                                 "Brain does not exist or is outside the managed area")},
+                            status_code=404)
+    ten = brain_label.clean(label)
+    trung = brain_label.taken_by(base, ten, except_root=root) if ten else None
+    if trung:
+        return JSONResponse({"ok": False, "error": localefmt.chu(f"Đã có brain tên \"{ten}\" (thư mục {trung})",
+                                                                 f"A brain named \"{ten}\" already exists (folder {trung})")},
+                            status_code=409)
+    try:
+        shown = await asyncio.to_thread(brain_label.write, root, ten)
+    except OSError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+    return {"ok": True, "folder": root.name, "label": shown, "path": str(root)}
 
 
 _DELETE_SYNC_TASKS = set()   # giữ ref mạnh cho eager-sync sau khi xóa não (tránh GC nuốt task)
@@ -7604,7 +7641,7 @@ async def files_list(brain: str = Query("brain"), path: str = Query(None), subdi
             items.append(row)
         except (PermissionError, OSError):
             continue
-    return {"root": root.name or str(root), "path": _files_rel(root, d),
+    return {"root": brain_label.display(root) or str(root), "path": _files_rel(root, d),
             "home": _files_rel(root, broot),                       # brain = 'nhà' (nút ⌂)
             "parent": None if d == root else _files_rel(root, d.parent),   # None = đã ở trần → ẩn Lên
             "focus": focus, "missing": missing,
@@ -11782,7 +11819,7 @@ async def viec_all():
             is_def = default_resolved is not None and rp == default_resolved
         except Exception:
             is_def = False
-        out.append(_brain_viec(p.name, path, is_def))
+        out.append(_brain_viec(brain_label.display(p), path, is_def))
 
     # Gộp thêm brain đã ĐĂNG KÝ với scheduler nhưng KHÔNG nằm trong BRAINS_DIR (folder ngoài, hoặc
     # brain legacy trong loop_config). Trước đây chỉ quét list_brains() nên loop tạo qua chat vào
@@ -11800,7 +11837,7 @@ async def viec_all():
         if rp in seen or not os.path.isdir(ep):
             continue
         seen.add(rp)
-        v = _brain_viec(Path(ep).name, ep, False)
+        v = _brain_viec(brain_label.display(ep), ep, False)
         if v["loops"] or v["reminders"]:   # brain ngoài chỉ hiện khi thực sự có việc (tránh rác)
             out.append(v)
 
@@ -14092,7 +14129,7 @@ def _cite_text(src: str, item: dict, brain: str) -> str:
         body = body[len(title):].strip()   # an inbox title is the body's first line: do not say it twice
     nguon = str(item.get("label") or "").strip()   # a human label only, never a raw code like "system"
     try:
-        ten_brain = Path(_brain_root(item.get("brain") or brain)).name
+        ten_brain = brain_label.display(_brain_root(item.get("brain") or brain))
     except Exception:
         ten_brain = ""
     head = localefmt.chu("Thông báo hệ thống" if src == "news" or item.get("kind") == "system" else "Báo cáo",
@@ -17404,7 +17441,7 @@ async def websocket_endpoint(ws: WebSocket):
                 try:
                     await send_client({"type": "brain_follow", "session_id": _prow.get("id") or "",
                                        "brain_ui": _brain_ui_value(brain),
-                                       "brain_name": Path(_brain_root(brain)).name})
+                                       "brain_name": brain_label.display(_brain_root(brain))})
                 except Exception:
                     pass
             prov, kind, api_key, api_model = _chat_provider_for_session(mcfg, _prow)
@@ -17852,7 +17889,7 @@ def sessions_get(session_id: str, limit: int = Query(0)):
     if sess.get("brain"):
         sess["brain_ui"] = _brain_ui_value(sess["brain"])
         try:
-            sess["brain_name"] = Path(_brain_root(sess["brain"])).name
+            sess["brain_name"] = brain_label.display(_brain_root(sess["brain"]))
         except Exception:
             sess["brain_name"] = ""
     return sess
@@ -21753,7 +21790,7 @@ def _model_header():
 
 # ---- Menu chọn brain cho PHIÊN Telegram (inline keyboard, giống menu model) ----
 def _tg_brain_header(chat_key):
-    cur = Path(_brain_root(_tg_brain(chat_key))).name
+    cur = brain_label.display(_brain_root(_tg_brain(chat_key)))
     return ("🧠 Brain của phiên này: " + cur + "\n"
             "Chọn brain khác (chỉ đổi cho phiên CỦA BẠN, người khác và dashboard không đổi):")
 
@@ -21769,7 +21806,7 @@ def _tg_brain_kb(brains, chat_key):
             mark = "✓ " if str(Path(b["path"]).resolve()) == cur else ""
         except Exception:
             mark = ""
-        rows.append([{"text": f"{mark}{b['name']} · {b.get('notes', 0)} note",
+        rows.append([{"text": f"{mark}{b.get('label') or b['name']} · {b.get('notes', 0)} note",
                       "callback_data": f"bs:{i}"}])
     rows.append([{"text": "✕ Đóng", "callback_data": "bx"}])
     return {"inline_keyboard": rows}
@@ -21795,7 +21832,7 @@ async def _tg_callback(data, chat=None):
             return {"alert": "Danh sách brain đã đổi - gõ /brain lại"}
         hit = brains[i]
         _tg_set_brain(chat_key, hit["path"])
-        return {"text": f"🧠 Đã chuyển phiên này sang brain: {hit['name']}\n"
+        return {"text": f"🧠 Đã chuyển phiên này sang brain: {hit.get('label') or hit['name']}\n"
                         "(hội thoại reset để nạp đúng bộ nhớ/skill của brain mới)",
                 "alert": "Đã đổi brain"}
     if data == "noop":
@@ -21886,7 +21923,7 @@ async def _tg_command(cmd, arg, chat=None, meta=None):
     if cmd == "status":
         prov, model, ghim = _tg_model_hieu_luc()
         busy = _tg_chat_busy(chat_key)
-        bname = Path(_brain_root(brain)).name
+        bname = brain_label.display(_brain_root(brain))
         return {"reply": ("📊 Trạng thái Javis\n"
                           f"Provider: {prov}\n"
                           f"Model: {model}"
@@ -21985,13 +22022,16 @@ async def _tg_command(cmd, arg, chat=None, meta=None):
         a = arg.strip()
         if a:
             # match theo tên: khớp đúng trước, khớp một phần sau (không phân biệt hoa thường)
-            hit = (next((b for b in brains if b["name"].lower() == a.lower()), None)
-                   or next((b for b in brains if a.lower() in b["name"].lower()), None))
+            # 0.219.0: khớp cả tên hiển thị (đổi tên) lẫn tên thư mục, để tên cũ người dùng quen vẫn gọi được.
+            def _ten(b):
+                return [x.lower() for x in (b.get("label") or "", b["name"]) if x]
+            hit = (next((b for b in brains if a.lower() in _ten(b)), None)
+                   or next((b for b in brains if any(a.lower() in t for t in _ten(b))), None))
             if not hit:
-                names = ", ".join(b["name"] for b in brains[:15])
+                names = ", ".join(b.get("label") or b["name"] for b in brains[:15])
                 return {"reply": f"⚠ Không thấy brain '{a}'. Có: {names}"}
             _tg_set_brain(chat_key, hit["path"])
-            return {"reply": f"🧠 Đã chuyển phiên này sang brain: {hit['name']}\n"
+            return {"reply": f"🧠 Đã chuyển phiên này sang brain: {hit.get('label') or hit['name']}\n"
                              "(hội thoại reset để nạp đúng bộ nhớ/skill của brain mới)"}
         # Không tham số → menu nút bấm chọn brain
         return {"reply": _tg_brain_header(chat_key), "reply_markup": _tg_brain_kb(brains, chat_key)}
@@ -23043,7 +23083,7 @@ async def slash_status(session_id: str = Query(""), brain: str = Query("brain"))
         "provider": prov, "provider_label": d.get("label") or prov, "kind": kind,
         "model": model or "",
         "pinned": bool((row or {}).get("pinned_provider")),
-        "brain": Path(_brain_root(brain)).name,
+        "brain": brain_label.display(_brain_root(brain)),
         "session_id": session_id or "",
         "msg_count": int((row or {}).get("msg_count") or 0),
         "last_input_tokens": int((row or {}).get("last_input_tokens") or 0),
@@ -23070,7 +23110,7 @@ def _doc_muc_luc_bo_nho(brain: str, toi_da: int = 20000) -> dict:
     except OSError:
         so_fact = 0
     return {"text": text[:toi_da], "cat_bot": len(text) > toi_da, "facts": so_fact,
-            "path": "memory/MEMORY.md", "brain": root.name}
+            "path": "memory/MEMORY.md", "brain": brain_label.display(root)}
 
 
 @app.get("/slash/memory")
