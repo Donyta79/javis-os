@@ -6,6 +6,11 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.228.0] - 2026-10-19
+### Sửa lỗi
+- **Trợ lý chạy bằng API key (Anthropic API, OpenAI API...) tạo được agent, workflow và gán model.** Trước đây chat với một trợ lý bằng model API thì nó nói không làm được, vì nó không được chỉ chỗ ghi file và cách đặt model. Giờ trợ lý nào cũng biết, trên mọi model.
+- **Trợ lý nói đúng lý do khi thiếu điều khiển trình duyệt.** Kết nối gắn với tài khoản Claude (như Composio nối trên claude.ai) chỉ chạy khi model chat là Claude Code. Chạy bằng API key thì trợ lý nói rõ điều đó và chỉ hai cách: nối nguồn đó ở trang Kết nối của Javis, hoặc đổi sang Claude Code.
+
 ## [0.227.0] - 2026-10-19
 ### Sửa lỗi
 - **Bot đọc đủ tin dài trong nhóm Zalo.** Trước đây bot chỉ thấy 300 ký tự đầu của mỗi tin trước đó, nên một tin dài bị mất đoạn cuối và bot hỏi lại điều khách đã nói (ca thật: mức phụ thu nằm ở cuối tin). Giờ mỗi tin giữ tới 2000 ký tự, các tin gần nhất luôn còn nguyên. Tin dài quá mức đó được rút gọn có đánh dấu, và bot được dặn không nói với khách là tin bị cắt.
