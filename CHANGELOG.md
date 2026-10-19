@@ -6,6 +6,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.235.0] - 2026-10-19
+### Thêm mới
+- **Việc nền hỏi bạn được, và chạy tiếp bằng câu trả lời.** Trước đây việc nền thiếu thông tin thì dừng ở "Cần bạn xử lý" mà không có chỗ trả lời. Bấm Thử lại thì nó chạy lại từ đầu rồi hỏi y hệt. Giờ câu hỏi về đúng khung chat đã giao việc, kể cả Telegram và Zalo. Bạn trả lời là việc chạy tiếp.
+- **Trả lời ở đâu cũng được:** ô ngay dưới câu hỏi trong khung chat web, ô trả lời trên thẻ việc ở trang Việc, hoặc nhắn bình thường trong chat và Javis tự chuyển vào đúng việc.
+- **Việc chạy tiếp chứ không làm lại từ đầu.** Lần chạy sau đọc được câu hỏi, câu trả lời và phần lần trước đã làm xong. Hỏi rồi trả lời không tính thêm lượt thử. Hỏi nhiều lần thì ngăn chi tiết của việc ghi lại đủ từng lượt hỏi đáp.
+- Chi tiết kỹ thuật: câu hỏi lưu ở `metadata.qa` của việc, endpoint mới `POST /kanban/task/answer`, tool `javis_task` có thêm `op=answer` để mọi engine chuyển được câu trả lời. Ý tưởng lấy từ cơ chế `ask_user` của OpenMuse (CopilotKit, giấy phép MIT), viết lại cho Javis.
+
 ## [0.234.0] - 2026-10-19
 ### Sửa lỗi
 - **Bot tag người trong nhóm Zalo không còn lộ mã.** Thỉnh thoảng bot trả lời trong nhóm hiện cả đoạn `<a_mention href="zm://Profile/...">` thay vì một cái tag gọn. Giờ đoạn mã đó được gỡ trước khi gửi, người được trả lời vẫn được tag thật.
