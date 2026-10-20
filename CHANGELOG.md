@@ -6,6 +6,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.238.0] - 2026-10-20
+### Sửa lỗi
+- **Việc nền chạy lại không còn gửi tin, đăng bài hay tạo đơn hai lần.** Việc nền chạy lại khi gặp lỗi tạm thời, khi máy chủ khởi động lại hoặc khi bạn bấm Thử lại, và trước đây mỗi lần như vậy là làm lại từ đầu, kể cả tin đã gửi cho khách. Giờ Javis ghi sổ từng thao tác ra ngoài của việc: cái gì đã làm xong thì lần sau bỏ qua.
+- **Máy chủ dừng đúng lúc đang gửi thì Javis hỏi bạn, không tự gửi lại.** Việc dừng ở "Cần bạn xử lý", kể rõ thao tác nào chưa chắc đã tới nơi. Trả lời "đã gửi" là bỏ qua, "chưa gửi" là gửi lại đúng một lần.
+- Chat thường không đổi gì. Giới hạn: kết nối gắn tài khoản Claude và lệnh shell không đi qua hub nên chưa được ghi sổ; Grok Build và Antigravity CLI chưa mang được mã việc tới hub.
+- Chi tiết kỹ thuật: module mới `once_ledger.py` (sổ `once_ledger.sqlite3` cạnh `kanban.sqlite3`), móc vào `_guard` của hub cho kết nối MCP không phải đọc, và vào tool plugin mức `full`. Việc Kanban gắn `job` vào `turn_context` lúc chạy. Ý tưởng lấy từ cơ chế `outcome_unknown` và cache thao tác của OpenMuse (CopilotKit, giấy phép MIT), viết lại cho Javis.
+
 ## [0.236.0] - 2026-10-19
 ### Sửa lỗi
 - **Dán ảnh lúc đang gọi Live không còn hai giọng trả lời chồng nhau.** Trước đây ảnh được đọc hai lần: một lần ở khung chat (giọng tiếng Việt), một lần do giọng Live tự giao lại (thường bằng tiếng Anh). Giờ ảnh chỉ được đọc một lần và chỉ giọng Live nói kết quả. Ảnh vẫn hiện trong khung chat, tải lại trang vẫn còn.
