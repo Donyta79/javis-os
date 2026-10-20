@@ -8,6 +8,13 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.249.0] - 2026-10-20
+### Improved
+- **The Plugins page has a search box.** Type a plugin name, a tool inside it or a word from its description and the list filters at once, and Vietnamese accent marks are optional. Press Esc or the X to clear it.
+- **Quick filter: All, On, Off**, each with a count, plus Errors when a plugin has failed.
+- **Your own plugins come first**, then plugins from Javis Store, then the ones built into Javis. Before, your own plugins sat below all 20 built-in ones.
+- **Cards are less than half as tall, with an on/off switch** on the right like the Skills page. Switching keeps your search text and your place on the page.
+
 ## [0.248.0] - 2026-10-20
 ### Fixed
 - **Domain on Hostinger: Javis says which step is broken.** Before, when DNS was right but the domain did not open, Settings only said "SSL: via Hostinger" with a hint that DNS might be wrong. Now Javis opens the domain from the server and names the cause: Hostinger has no route yet (set DOMAIN_NAME and Redeploy), the certificate is pending, the proxy cannot reach Javis, the domain opens another site, or port 443 does not answer.

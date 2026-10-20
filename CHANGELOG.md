@@ -6,6 +6,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.249.0] - 2026-10-20
+### Cải thiện
+- **Trang Công cụ (Plugins) có ô tìm kiếm.** Gõ tên plugin, tên công cụ bên trong hay một chữ trong mô tả là lọc ngay, không cần gõ dấu ("lich dang" vẫn ra "Lịch đăng bài"). Bấm Esc hoặc dấu X để xoá.
+- **Lọc nhanh Tất cả, Đang bật, Đang tắt** (có số đếm từng mục), thêm mục Lỗi khi có plugin bị lỗi.
+- **Plugin do bạn tạo nằm trên cùng**, rồi tới plugin từ Javis Store, cuối cùng là plugin có sẵn của Javis. Trước đây plugin tự tạo bị đẩy xuống dưới cả 20 plugin có sẵn.
+- **Thẻ gọn hơn một nửa, bật tắt bằng công tắc gạt** bên phải như trang Kỹ năng. Bật tắt xong vẫn giữ nguyên chữ đang tìm và chỗ đang xem.
+
 ## [0.248.0] - 2026-10-20
 ### Sửa lỗi
 - **Tên miền trên Hostinger: Javis nói rõ bước nào đang hỏng.** Trước đây đã trỏ DNS đúng mà tên miền chưa mở được thì Cài đặt chỉ ghi "SSL: qua Hostinger", kèm câu gợi ý DNS có thể sai. Giờ Javis tự mở tên miền từ máy chủ và ghi đúng nguyên nhân: Hostinger chưa nhận tên miền (cần đặt DOMAIN_NAME rồi Redeploy), đang chờ cấp chứng chỉ, proxy không gọi được Javis, tên miền mở nhầm trang khác, hay cổng 443 không trả lời.
