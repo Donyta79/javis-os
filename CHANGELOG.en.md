@@ -8,6 +8,12 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.269.0] - 2026-10-21
+### Fixed
+- **The Update button works again when Javis runs as a normal user.** Since 0.267.0, a machine running the Javis service as a non-root user failed every update with "Interactive authentication required" and stayed on the old version. Javis now falls back to a way that needs no admin rights: it downloads the new version while the old one keeps running, then restarts once. Machines running as root are unchanged.
+- If the machine still does not allow it, the screen shows the manual update command and one command (`sudo loginctl enable-linger`) that makes the button work from then on.
+- **Note:** a machine stuck on 0.267.0 or 0.268.0 needs one manual update to reach this version (`git pull --ff-only`, install the libraries, `sudo systemctl restart javis`). After that the Update button works as usual.
+
 ## [0.268.0] - 2026-10-21
 ### Fixed
 - **SharePoint files read through Composio at Read-only.** Every SharePoint command, even listing a folder or downloading a file to read, was blocked as dangerous because the app name starts with the word SHARE. Javis now ignores the app name when it judges a command: reads run at Read-only, while upload, share and delete still need Full access.
