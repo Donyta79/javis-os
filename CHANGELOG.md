@@ -6,6 +6,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.278.0] - 2026-10-22
+### Cải thiện
+- **Khung chat Nhóm dùng được như khung Trò chuyện.** Sao chép tin, nút Copy của khối mã, Enter trên điện thoại (xuống dòng thay vì gửi), vuốt để trích dẫn, trích đúng đoạn đang bôi và "Xem thêm" cho tin dài đều chạy giống khung chat chính.
+- **Ảnh bạn gửi trong Nhóm bấm vào là phóng to ngay trong app;** ảnh hỏng hiện khung báo thay vì ô vỡ.
+- **Tin bạn gửi hiện ngay,** rớt mạng thì có nút Thử lại. File tải lên bị kẹt sẽ báo lỗi chứ không quay mãi.
+- **Đọc tin cũ không bị giật xuống cuối,** có nút "Tin mới" để quay về; tin mới tới không xoá đoạn chữ bạn đang bôi đen. Nút trong thẻ trả lời giờ gửi vào đúng Nhóm.
+
 ## [0.276.0] - 2026-10-22
 ### Bảo mật
 - **Webhook che luôn mã tài khoản nhân viên.** Trước đây ô xem sự kiện (đã che) và file mẫu xuất ra vẫn giữ mã của người tạo đơn, người sửa, người bán vì đó là trường "id". Giờ mọi giá trị nằm dưới người tạo, người sửa, người bán, người chăm sóc đều bị che như thông tin khách.
