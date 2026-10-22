@@ -6,6 +6,14 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.282.0] - 2026-10-22
+### Sửa lỗi
+- **Bot Zalo không còn bị "điếc" khi có một phiên khác của cùng nick đang chạy.** Sau lần cập nhật hôm nay, một bản Zalo cũ sót lại cứ giành kết nối, bot chỉ nghe được tin vài giây sau mỗi lần nối lại nên bỏ lỡ tin tag và tin nhắn riêng. Javis giờ tự tắt bản Zalo cũ trên máy, thẻ bot báo đỏ, và chuông báo bạn nếu phiên giành kết nối nằm ở nơi khác (Zalo Web, một Javis khác).
+- **Câu bot trả lời mà Zalo không nhận thì báo lỗi gửi,** không còn hiện như đã gửi trong khi khách không thấy gì. Zalo MCP 1.6.1 cũng gửi tin đúng qua phiên mới sau mỗi lần nối lại.
+### Thêm mới
+- **Bot đọc được tag Zalo của cuộc chat** (Gia đình, Bạn bè, Công ty, Khách...) nên biết mình đang nói với ai. Form bot Zalo cá nhân có thêm mục **"Không trả lời các cuộc chat có tag Zalo"**: tick tag lấy thẳng từ Zalo hoặc gõ tên, chat mang tag đó thì bot im hẳn.
+- **Bot Zalo cá nhân tự quyết nhắn nhiều tin ngắn** (tối đa 4 tin) khi câu trả lời có từ hai ý trở lên, thay vì một tin dài khó đọc.
+
 ## [0.281.0] - 2026-10-22
 ### Cải thiện
 - **Chạy bộ test không còn làm đầy ổ C.** Trước đây mỗi lượt chạy để lại hơn 1000 thư mục rác trong thư mục Temp của Windows, dồn lại có lúc tới 50.000 thư mục, khoảng 30 GB. Giờ mỗi file test dùng một thư mục tạm riêng và tự xoá khi chạy xong.

@@ -8,6 +8,14 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.282.0] - 2026-10-22
+### Fixed
+- **A Zalo bot no longer goes "deaf" while another session of the same account runs.** After today's update, a leftover old Zalo copy kept taking the connection, so the bot only heard messages for a few seconds after each reconnect and missed tags and private messages. Javis now stops old Zalo copies on the machine, the bot card turns red, and the bell tells you when the other session is elsewhere (Zalo Web, another Javis).
+- **A bot reply Zalo did not accept now shows as a send error,** instead of looking sent while the customer saw nothing. Zalo MCP 1.6.1 also sends through the new session after every reconnect.
+### Added
+- **The bot reads the Zalo tags of a chat** (Family, Friends, Work, Customer...), so it knows who it is talking to. Personal Zalo bots get **"Never answer chats with these Zalo tags"**: tick tags listed from Zalo or type one, and the bot stays silent in those chats.
+- **Personal Zalo bots decide to send several short messages** (up to 4) when an answer has two or more points, instead of one long hard-to-read block.
+
 ## [0.281.0] - 2026-10-22
 ### Improved
 - **Running the test suite no longer fills drive C.** Each run used to leave over 1,000 leftover folders in the Windows Temp folder, at one point piling up to 50,000 folders and about 30 GB. Each test file now gets its own temporary folder, deleted when it finishes.

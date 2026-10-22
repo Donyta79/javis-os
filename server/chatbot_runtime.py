@@ -40,6 +40,7 @@ import channel_accounts
 import channels
 import chatbot_doc_tools
 import bot_images
+import bot_split
 import bot_linked_docs
 import chatbot_grounding
 import chatbot_log
@@ -374,6 +375,15 @@ def build_bot_prompt(bot: dict) -> str:
     # TRƯỚC file Agent: mặc định của Javis đọc trước, luật của chủ đọc sau và thắng (0.172.0).
     if (bot or {}).get("_kenh_luot") == "zalo_personal":
         phan.append(_CAU_ZALO_CA_NHAN)
+        # Zalo labels of THIS chat (0.281.0): who the sender is to the owner, which the bot could not know before (a
+        # mother writing "lấy cho mẹ 2 chai mắm" looked like a customer). Set by the owner, still cleaned like chat data.
+        tags = [chatbot_reply_policy.clean_chat_text(x, 60) for x in ((bot or {}).get("_zalo_labels") or [])][:10]
+        tags = [x for x in tags if x]
+        if tags:
+            phan.append("\nTAG ZALO CỦA CUỘC CHAT NÀY: chủ đã gắn tag " + ", ".join(f'"{x}"' for x in tags)
+                        + " cho cuộc chat này trong Zalo. Tag là cách chủ phân loại người nhắn (gia đình, bạn bè, "
+                        "đồng nghiệp, khách...): dùng nó để biết bạn đang nói với ai, và cân nhắc có nên nhân danh chủ "
+                        "trả lời hay không.")
     if (bot or {}).get("_bao_chu"):
         phan.append(_CAU_RIENG_BAO_CHU)
     if than.strip():
@@ -404,6 +414,9 @@ def build_bot_prompt(bot: dict) -> str:
     # The channel of THIS turn sends files (0.84.3): tell the Agent how to send an image, or it never knows it can.
     if bot_images.channel_sends_files((bot or {}).get("_kenh_luot")):
         phan.append(bot_images.PROMPT_HINT)
+    # The channel of THIS turn sends several short messages (0.281.0): the Agent may split its answer, see bot_split.
+    if (bot or {}).get("_kenh_luot") in bot_split.SPLIT_CHANNELS:
+        phan.append(bot_split.PROMPT_HINT)
     # Lượt Tự đánh giá do _make_answer_fn gắn. Cờ chứ không suy từ meta: prompt được dựng ở đây,
     # nơi không có meta của lượt.
     if (bot or {}).get("_tu_dong"):
@@ -719,6 +732,11 @@ def _ly_do_im(bot_cfg: dict, meta: dict, luc=None) -> str:
     ly_do = _ly_do_im_co_ban(bot_cfg, meta)
     if ly_do:
         return ly_do
+    # A chat carrying a Zalo label the owner told the bot to stay out of (0.281.0), e.g. "Gia đình". Silent, nothing to
+    # approve. A chat the owner gave its own exception (Per-chat exceptions) is one they chose by hand: it wins.
+    if (chatbot_store.skips_by_label(bot_cfg, (meta or {}).get("zalo_labels"))
+            and not chatbot_store.ngoai_le_cua(bot_cfg, meta)):
+        return "tag_bo_qua"
     if not chatbot_store.trong_gio_truc((bot_cfg or {}).get("gio_truc"), luc):
         return "ngoai_gio_truc"
     return ""
@@ -1643,6 +1661,7 @@ def _make_answer_fn(bot_id: str):
         cfg["_kenh_luot"] = kenh_luot
         cfg["_tu_dong"] = tu_dong
         cfg["_bao_chu"] = chatbot_tu_dong.private_escalation(cfg, meta or {})
+        cfg["_zalo_labels"] = list((meta or {}).get("zalo_labels") or [])
         cfg["_ngu_canh_nhom"] = ngu_canh_nhom(meta, kenh_luot, aid_luot)
         cfg["_ngu_canh_plugin"] = await plugin_context(cfg, meta or {}, kenh_luot, aid_luot)
         # Trong nhóm Zalo cá nhân cả nhóm dùng CHUNG một mạch hội thoại (khoá theo nhóm), nên
@@ -1762,6 +1781,15 @@ def _make_answer_fn(bot_id: str):
                 out = dict(out or {})
                 out["text"] = dap
                 out["files"] = list(out.get("files") or []) + anh
+        # Several short messages (0.281.0, bot_split): the channel that sends them separately keeps the marker; any
+        # other channel gets one message with blank lines. The bot log and the inbox always record the joined text.
+        dap_ghi = dap
+        if dap and bot_split.has_mark(dap):
+            dap_ghi = bot_split.joined(dap)
+            if kenh_luot not in bot_split.SPLIT_CHANNELS:
+                dap = dap_ghi
+                out = dict(out or {})
+                out["text"] = dap
         # "Bí" đo bằng chính CÂU BOT VỪA NÓI, không bằng việc có tìm ra tài liệu hay không.
         #
         # Ở chế độ theo Agent thì không có tài liệu là chuyện thường - bot vẫn trả lời tốt bằng
@@ -1795,7 +1823,7 @@ def _make_answer_fn(bot_id: str):
         chatbot_log.ghi(bot_id, {
             "chat_id": chat_id, "chat_type": (meta or {}).get("chat_type"),
             "user_name": (meta or {}).get("user_name"),
-            "hoi": text, "dap": dap or ("(lượt hỏng, bot không gửi gì cho khách)" if loi_ky_thuat else ""),
+            "hoi": text, "dap": dap_ghi or ("(lượt hỏng, bot không gửi gì cho khách)" if loi_ky_thuat else ""),
             "loi": loi_ky_thuat,
             "co_tai_lieu": bool(tl.get("co")), "nguon": tl.get("nguon"),
             "chuyen_nguoi": goi_nguoi, "bi": bi,
@@ -1807,7 +1835,7 @@ def _make_answer_fn(bot_id: str):
             "canh_bao": " · ".join(x for x in ((out or {}).get("canh_bao"), tl.get("canh_bao_link"), cfg.get("_anh_loi")) if x),
         })
         # Câu bot nói vào Hộp thư hội thoại, cạnh tin khách. Lượt gãy thì `dap` rỗng nên không ghi gì: khách không nhận tin nào.
-        ghi_tin_bot(cfg, meta or {}, dap, loi=loi_ky_thuat, files=(out or {}).get("files"))
+        ghi_tin_bot(cfg, meta or {}, dap_ghi, loi=loi_ky_thuat, files=(out or {}).get("files"))
         if goi_nguoi:
             _BI_LIEN_TIEP[khoa] = 0     # đã gọi người rồi thì đếm lại, đừng gọi mỗi lượt sau đó
             _goi_chu(cfg, str((meta or {}).get("user_name") or chat_id),
@@ -1926,7 +1954,7 @@ async def manual_answer(conv: dict, msgs: list, draft: bool = False) -> dict:
     dap = str((out or {}).get("text") or "").strip()
     if not dap or is_silent_answer(dap):
         return {"ok": True, "silent": True, "text": "", "meta": meta}
-    return {"ok": True, "silent": False, "text": dap, "meta": meta}
+    return {"ok": True, "silent": False, "text": bot_split.joined(dap), "meta": meta}
 
 
 def manual_done(conv: dict, msgs: list, text: str, meta: dict) -> dict:
@@ -2122,7 +2150,7 @@ async def try_message(bot_id: str, text: str, chat_type: str = "private", mentio
         out.update(stage="agent_silent", code="agent_silent",
                    reason=localefmt.chu("Agent đọc tin và chọn không trả lời.", "The Agent read it and chose not to reply."))
         return out
-    out.update(stage="answered", would_reply=True, text=dap)
+    out.update(stage="answered", would_reply=True, text=bot_split.joined(dap))
     return out
 
 
