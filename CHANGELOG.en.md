@@ -8,6 +8,15 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.290.0] - 2026-10-22
+### Added
+- **A goal bar right above the chat box.** Once you set `/goal`, a bar tracks it: the goal text, a running timer, buttons to delete, pause or resume, and an arrow for details (which round, what is still missing). It shows in every chat view.
+- **Several goals at once.** One goal per conversation. With two or more, the bar starts with a number; press it to drop down the list and press a row to open that conversation.
+- **Typed commands are highlighted.** Type `/goal`, `/plan` or a skill name into the chat box and the command part turns orange, so you can see what Javis will read as a command.
+### Improved
+- **Goals pause instead of vanishing.** Pressing Stop or typing a message mid-run only pauses the goal; moving to another conversation makes it wait and it carries on when you come back; it survives a page reload on the bar.
+- **A tidy, aligned / command menu.** One line per command, a shared command column so descriptions line up, smaller text, and group headings for Commands, Agents, Workflows and Skill.
+
 ## [0.289.0] - 2026-10-22
 ### Fixed
 - **Webhooks: the AI now reads the whole event.** It used to get only the first 8,000 characters, so even a one-item POSCake order lost its order id and total, and a prompt that decides by the order's status could guess wrong. The AI now gets up to 40,000 characters, written on one line; anything longer is cut and the AI is told so.
