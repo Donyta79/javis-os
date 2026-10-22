@@ -6,6 +6,10 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.292.0] - 2026-10-23
+### Thêm mới
+- **Duyệt đề xuất sửa thân skill.** Studio có màn hình xem nguyên văn bản gốc, diff và kết quả thử đã lưu; chủ sở hữu có thể tạo đề xuất, cấp quyền sửa đúng vùng hoặc diff và thu hồi quyền. Nội dung được lưu mã hóa riêng, giữ nguyên hash và byte khi tải xuống. Chưa bật thử candidate thay đổi hoặc áp dụng trên bộ não thật.
+
 ## [0.291.0] - 2026-10-23
 ### Thêm mới
 - **Chuẩn bị thử agent và skill trên dữ liệu cố định.** Xây phép thử riêng, bộ case và hồ sơ nghiệm thu để kiểm thay đổi mà không chạm nội dung hay hành động đang dùng. Chưa tự bật trên bộ não thật.

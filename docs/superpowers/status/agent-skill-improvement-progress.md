@@ -11,24 +11,72 @@
 - M0 branch: `codex/agent-skill-improvement-m0`; release0.287.0, PR #794 merged
   `0990331574e617fa1a79cd69fcd7b87d465448c5`; publication39797072172 succeeded.
 - Original checkout remains untouched by implementation; only the three relevant source documents were copied.
-- Current engineering branch: `codex/agent-skill-improvement-m1`, release0.291.0 reserved
-  on https://github.com/blogminhquy/javis-os/pull/795 (attached, ready for review).
-  Rebased onto main046ea863/0.290.0; code checkpoints4c75c379 and0ea1e134 include reviewed
-  lifetime/capacity and POSIX semantic-identity fixes. Independent review has no open
-  Important findings after the reproduced CI corrections described below.
-  CI39847154134 on23e546b9 passed the earlier six failing scripts except for a
-  separate end-to-end directory-stat race. The final repair and deterministic
-  negative guards below are independently reviewed; fresh final-head CI is required.
-  Final-head CI, merge and publication remain pending. Earlier reservations/checkpoints
-  below are historical; they do not supersede this current state.
+- M1 engineering integrated: release0.291.0, PR795 straight squash merged
+  `9dd7a9f9de3e8fadb338298e0f9743d48e5c1d4b`. Final-head Linux CI39852883192
+  passed on independently reviewed e0381902; the merged tree is identical.
+  Publication39856024117 succeeded on the actual main merge. No production
+  deployment, restart or activation occurred. Earlier reservations, failures and
+  checkpoints below remain historical and do not supersede this state.
+- Current engineering continuation is M2A below, release0.292.0.
+
+## M2A engineering continuation
+
+- Worktree: `C:/Users/admin/.codex/worktrees/agent-skill-improvement-m2a/Javis-OS`;
+  branch `codex/agent-skill-improvement-m2a`, release0.292.0 reservationf6d8d356,
+  attached draft PR799: https://github.com/blogminhquy/javis-os/pull/799.
+- Dependency M1 is published as0.291.0 on main9dd7a9f9. Replayed only A's six
+  own commits onto that actual merged source; the resulting tree is byte-identical
+  to the reviewed A checkpoint b01ddf1b. PR799 targets main for final CI/integration;
+  0.292.0 remains the next free reservation. The original checkout remains untouched.
+- Plan: `../plans/2026-10-23-agent-skill-improvement-m2a.md`, reviewed/self-reviewed.
+  Tasks1–2 add schema4 owner-authority/immutable candidate metadata and byte-exact
+  owner staging. Their new suites pass12/11/14 tests; relevant assets, Host,
+  store/case/trial/admission regressions pass. Task3 exact private review passes13
+  tests and its combined8 selectors pass54s. Task4 adds9 browser-owner routes,
+  complete baseline/diff/artifact review and inert vi/en Studio authoring. API7,
+  actual-main4 and final private-review15 tests pass; focused14 Python scripts,
+  JS5 scripts and unchanged-prefix595-route snapshot pass. Headless Chromium
+  at390px vi/en verifies exact downloads, inert content and UTF-8/CRLF selection.
+  An extra unrelated webhook POSIX-mode600 test fails on Windows; no test/guard
+  was weakened. Fresh whole-branch independent review through65740de1 found no
+  Important/Critical issues; the subsequent stale-Studio-skill correction also
+  passed independent RED/GREEN reproduction and narrow review. Final CI and
+  integration remain pending. Trial/activation flags stay false; no actual engine
+  calls in A.
+- Old M2 CI39851845888 failed only the existing fastyaml architectural guard:
+  the patch validator directly called the slow YAML loader. The failure was
+  reproduced locally and corrected to use the shared fastyaml parser after the
+  unchanged strict token/node/duplicate-key checks. Five focused scripts pass25s;
+  independent review passes2 scripts,12 parser-parity inputs and8 unsafe-input
+  rejections with no Important findings. A fresh fixed-head CI is required.
+- Final UI operation review reproduced and fixed successful-capture event reuse,
+  duplicate pagination after reload, and Stage retry after a known successful
+  write whose metadata refresh failed. Unknown transport retries keep the event;
+  acknowledged actions retire it. Complete source period/timezone/cutoff/schema
+  metadata is now inert alongside artifact fixtures. Peer independently reproduced
+  all four old failures and verified the correction without Important findings.
+  The updated complete JavaScript suite passes266/266 in43s; vi/en mobile browser
+  checks pass. Final-head Linux CI still gates integration.
+- CI39858827459 on bf17f891 failed only the existing lightweight-startup test:
+  two new modules imported cryptography's InvalidToken at module load. The timing
+  ratio itself passed4.08. The same deterministic failure reproduced locally;
+  deferring those exact imports to private review/proposal operations preserves
+  exception handling and all source/grant checks. Startup, private review,
+  staging, API and actual-main scripts now pass5/5 in44s. Peer independently
+  confirmed old/corrected fresh-main behavior and corrupt-blob rejection (two
+  suites pass18s), with no Important findings. New final-head Linux CI is still
+  required before merge; earlier runs do not qualify the corrected source.
+- Owner delegated pilot choice. An objective Python bug-fix/test pilot is selected
+  for reproducibility alongside the spec's required business pilots. This choice
+  does not supply an accepted business dataset or owner acceptance evidence.
 
 ## Milestones
 
 | Milestone | Engineering | Business evidence | Rollout |
 |---|---|---|---|
 | M0 | Complete: PR #794 merged09903315, CI39793439501 and publication39797072172 passed;0.287.0 | Not applicable to foundation | Metadata only; no live activation or production restart |
-| M1 | Tasks1–5 implemented and independently reviewed; Task6 final-head CI/integration pending | One historical real-engine synthetic baseline; aggregate unknown; no business pilot | Trial/activation flags false; not enabled |
-| M2 | Pending | No skill feasibility yet | Not enabled |
+| M1 | Complete engineering: PR795 merged9dd7a9f9, CI39852883192 and publication39856024117 succeeded;0.291.0 | One historical real-engine synthetic baseline; aggregate unknown; no business pilot | Trial/activation flags false; not enabled |
+| M2 | M2A Tasks1–4 implemented and independently reviewed; final CI/integration and B–F open | No skill feasibility yet | Not enabled |
 | M3 | Pending | No qualification or live canary | Not enabled |
 | M4 | Pending | No adapter/routing pilot | Not enabled |
 | M5 | Pending | No agent pilot | Not enabled |
