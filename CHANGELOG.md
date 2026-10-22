@@ -6,6 +6,10 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.291.0] - 2026-10-23
+### Thêm mới
+- **Chuẩn bị thử agent và skill trên dữ liệu cố định.** Xây phép thử riêng, bộ case và hồ sơ nghiệm thu để kiểm thay đổi mà không chạm nội dung hay hành động đang dùng. Chưa tự bật trên bộ não thật.
+
 ## [0.290.0] - 2026-10-22
 ### Thêm mới
 - **Thanh mục tiêu ngay trên khung chat.** Đặt `/goal` xong là có một thanh để bám theo: chữ mục tiêu, đồng hồ đếm thời gian, nút xoá, tạm dừng hay chạy tiếp, và mũi tên xem chi tiết (vòng mấy, còn thiếu gì). Thanh hiện ở mọi khung chat.

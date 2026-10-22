@@ -157,6 +157,8 @@ import cli_autoinstall   # trạng thái agy/grok do container Docker tự cài 
 import agent_assets      # tài liệu & link gắn vào MỘT trợ lý (lưu trong frontmatter agent)
 import workflow_chat     # persona_cua_phien: kênh agent:/workflow: đổi cách _do_turn chạy lượt
 import javis_core        # Javis Core (0.185.0): system assistant pinned in every brain
+import main_prompt_rendering  # pure shared prompt blocks; no live reads
+import main_attachment_rendering  # pure shared attachment templates; no live reads
 import memory_control    # 0.188.0: list/edit/forget memories, learning switch, person profile
 import memory_chat       # 0.190.0: the same, plus agent lessons, from chat (tool javis_memory)
 import memory_receipt    # 0.190.0: the "Đã nhớ · Hoàn tác" line under an answer, and no empty "đã quên"
@@ -669,84 +671,13 @@ def _brain_memory_dir(brain: str) -> Path:
 # (~5,7k token) và tăng tuyến tính theo số ký ức - đúng cái bệnh curator vừa mắc, không có gì
 # chặn. Trần này chưa cắt gì hôm nay (18.363 < 20.000), nó biến đường dốc thành đường phẳng.
 MEMORY_INDEX_MAX = int(os.getenv("JAVIS_MEMORY_INDEX_MAX", "20000"))
-_MEM_ITEM_RE = re.compile(r'^(\s*-\s*\[[^\]]*\]\([^)]*\))\s*[-–—]?\s*(.*)$')
+# Existing memory-index consumers use the same matcher as the shared formatter.
+_MEM_ITEM_RE = main_prompt_rendering._MEM_ITEM_RE
 
 
 def _fit_memory_index(mem: str, cap: int = None) -> str:
-    """Ép chỉ mục bộ nhớ xuống dưới trần mà KHÔNG làm mất ký ức nào cho tới phút chót.
-
-    Hạ dần theo bậc: giữ nguyên -> rút mô tả còn 100 ký tự -> còn 60 -> chỉ còn tiêu đề+link
-    -> (cùng lắm) cắt bớt dòng kèm lời chỉ đường. Rút mô tả KHÔNG mất năng lực nhớ: tiêu đề và
-    đường dẫn file vẫn còn nguyên, chi tiết đầy đủ vẫn nằm trong memory/facts/*.md và đọc được
-    bất cứ lúc nào. Mất hẳn dòng mới là mất trí nhớ, nên đó là bậc CUỐI.
-    """
-    cap = cap or MEMORY_INDEX_MAX
-    if len(mem) <= cap:
-        return mem
-    lines = mem.split("\n")
-
-    def rebuild(desc_cap):
-        out = []
-        for l in lines:
-            m = _MEM_ITEM_RE.match(l)
-            if not m:
-                out.append(l)
-                continue
-            head, desc = m.group(1), m.group(2).strip()
-            if not desc:
-                out.append(head)
-            elif desc_cap is None:
-                out.append(head)
-            elif len(desc) <= desc_cap:
-                out.append(f"{head} - {desc}")
-            else:
-                out.append(f"{head} - {desc[:desc_cap].rstrip()}…")
-        return "\n".join(out)
-
-    for desc_cap in (100, 60, None):
-        got = rebuild(desc_cap)
-        if len(got) <= cap:
-            note = ("\n\n> (Mô tả trong chỉ mục đã rút gọn cho vừa ngữ cảnh. Chi tiết đầy đủ của "
-                    "từng ký ức nằm trong file tương ứng ở memory/facts/ - cứ đọc khi cần.)")
-            return got + note
-
-    # Bậc cuối: buộc phải bỏ bớt dòng. Giữ các dòng ĐẦU (ký ức nền tảng ghi sớm nhất) và nói rõ
-    # còn bao nhiêu, kèm đường đọc tiếp - đừng để mất im lặng.
-    # 0.222.0: also NAME the hidden memories (file names only, within a small budget). A model
-    # cannot look up a memory it does not know exists: with only a count, "who is Lan?" got "I do
-    # not know" while facts/lan-em-gai.md sat on disk unread.
-    hidden_budget = min(1200, cap // 5)
-    kept, total = [], 0
-    items = 0
-    rebuilt = rebuild(None).split("\n")
-    for l in rebuilt:
-        if total + len(l) + 1 > cap - 300 - hidden_budget:
-            break
-        kept.append(l)
-        total += len(l) + 1
-        if _MEM_ITEM_RE.match(l):
-            items += 1
-    con_lai = sum(1 for l in lines if _MEM_ITEM_RE.match(l)) - items
-    names = []
-    used = 0
-    for l in rebuilt[len(kept):]:
-        m = _MEM_ITEM_RE.match(l)
-        link = re.search(r"\]\(([^)]*)\)", m.group(1)) if m else None
-        if not link:
-            continue
-        slug = Path(link.group(1).strip()).stem
-        if not slug:
-            continue
-        if used + len(slug) + 2 > hidden_budget:
-            names.append("…")
-            break
-        names.append(slug)
-        used += len(slug) + 2
-    ten = (f" Tên file của chúng: {', '.join(names)}. Cần ký ức nào thì đọc memory/facts/<tên>.md."
-           if names else "")
-    return "\n".join(kept) + (
-        f"\n\n> (Chỉ mục quá dài nên còn {con_lai} ký ức chưa liệt kê ở đây.{ten} "
-        "Đọc memory/MEMORY.md để xem đủ danh sách, và memory/facts/ để xem chi tiết.)")
+    """Compatibility wrapper for the shared pure legacy memory formatter."""
+    return main_prompt_rendering.fit_memory_index(mem, cap or MEMORY_INDEX_MAX)
 
 
 # ── Khối PROJECT ghép vào system prompt ──────────────────────────────────────
@@ -786,11 +717,8 @@ def _project_block(project_id: str, chi_huong_dan: bool = False) -> str:
         return ""
     if not p:
         return ""
-    ra = ""
-    hd = (p.get("instructions") or "").strip()
-    if hd:
-        ra += (f"\n\n# === HƯỚNG DẪN RIÊNG CỦA PROJECT: {p.get('name') or ''} ===\n"
-               f"{hd[:sessions.PROJECT_INSTRUCTIONS_MAX]}")
+    ra = main_prompt_rendering.render_project_instructions(
+        p.get("name") or "", p.get("instructions") or "", instructions_max=sessions.PROJECT_INSTRUCTIONS_MAX)
     if chi_huong_dan:
         return ra
 
@@ -800,14 +728,7 @@ def _project_block(project_id: str, chi_huong_dan: bool = False) -> str:
         return ra
 
     dong, da_nap = _liet_ke_tai_lieu(p.get("brain") or "brain", files, links)
-    if dong:
-        ra += ("\n\n# === TÀI LIỆU & LINK CỦA PROJECT ===\n"
-               "Đây là DANH SÁCH, không phải nội dung: mở file bằng tool đọc file khi cần, "
-               "đừng đoán nội dung từ cái tên. Link chỉ mở được nếu lượt này có tool duyệt web; "
-               "không có thì nói thẳng chứ đừng đoán nội dung trang.\n" + "\n".join(dong))
-    if da_nap:
-        ra += ("\n\n# === NỘI DUNG FILE ĐÃ GHIM (nạp sẵn, không cần mở lại) ===" + "".join(da_nap))
-    return ra
+    return ra + main_attachment_rendering.render_project_assets(dong, da_nap)
 
 
 def _project_has_rules(project_id: str) -> bool:
@@ -824,47 +745,28 @@ def _project_has_rules(project_id: str) -> bool:
 
 
 def _liet_ke_tai_lieu(brain: str, files: list, links: list):
-    """(dòng liệt kê, nội dung file đã ghim) cho một danh sách tài liệu + link.
+    """Observe ordinary pinned file rows; the shared pure renderer owns templates.
 
-    Tách khỏi `_project_block` vì khung "file & link của CUỘC TRÒ CHUYỆN" gắn tay dùng lại
-    nguyên bộ luật này. Hai chỗ mà chép đôi thì trần token trôi lệch, và trần token trôi lệch
-    là kiểu hỏng không ai thấy cho tới lúc hoá đơn hoặc lỗi quá hạn mức xuất hiện.
+    Preserve the legacy read order and per-row errors, including duplicate stored
+    paths and reads after the content budget is exhausted. Source permissions and
+    decoding remain on this production path, outside protected trial rendering.
     """
-    dong, da_nap, con_lai = [], [], PROJECT_GHIM_TONG_MAX
-    for f in files[:PROJECT_FILES_LIET_KE]:
-        ten, duong = f.get("name") or "", f.get("path") or ""
-        if not f.get("pinned"):
-            dong.append(f"- [file] {ten} - {duong}")
-            continue
-        duoi = os.path.splitext(duong)[1].lower()
-        if duoi not in PROJECT_GHIM_DUOI:
-            # Nói THẲNG là ghim nhưng không nạp được, kèm lý do. Im lặng bỏ qua thì người dùng
-            # ghim xong tưởng Javis đã đọc, rồi ngạc nhiên vì nó trả lời như chưa thấy gì.
-            dong.append(f"- [file, đã ghim nhưng là tệp nhị phân - tự mở khi cần] {ten} - {duong}")
-            continue
-        try:
-            # `_safe_serve_path` chứ không phải `_safe_path`: đây là đường ĐỌC, và trần duyệt
-            # có thể nằm CAO hơn gốc brain (vd localhost duyệt tới cả ổ đĩa). Lúc đó một đường
-            # dẫn lưu theo gốc brain sẽ không resolve được từ trần, và ngược lại - hàm serve
-            # thử cả hai quy ước, cả hai đều bị khoá trong trần. Nhánh THÊM file thì vẫn dùng
-            # `_safe_path` (chặt hơn): ở đó người dùng chọn từ trình duyệt file nên đường dẫn
-            # chắc chắn theo trần, và ghi vào kho thì phải chặt.
-            noi_dung = _safe_serve_path(brain, duong).read_text(
-                encoding="utf-8", errors="replace")
-        except Exception:
-            dong.append(f"- [file, đã ghim nhưng đọc không được] {ten} - {duong}")
-            continue
-        cat = noi_dung[:min(PROJECT_GHIM_FILE_MAX, max(0, con_lai))]
-        if not cat:
-            dong.append(f"- [file, đã ghim nhưng hết chỗ nạp trong lượt này] {ten} - {duong}")
-            continue
-        con_lai -= len(cat)
-        thieu = " (đã cắt bớt)" if len(cat) < len(noi_dung) else ""
-        da_nap.append(f"\n## {ten} - {duong}{thieu}\n{cat}")
-    for l in links[:PROJECT_FILES_LIET_KE]:
-        dong.append(f"- [link] {l.get('label') or l.get('url')} - {l.get('url')}"
-                    + (" (ghim)" if l.get("pinned") else ""))
-    return dong, da_nap
+    loaded = []
+    for item in files[:PROJECT_FILES_LIET_KE]:
+        prepared = None
+        path = item.get("path") or ""
+        if item.get("pinned") and os.path.splitext(path)[1].lower() in PROJECT_GHIM_DUOI:
+            try:
+                # Read policy includes the serving ceiling, as in the legacy path.
+                text = _safe_serve_path(brain, path).read_text(encoding="utf-8", errors="replace")
+                prepared = main_attachment_rendering.PreparedAttachmentText(text[:PROJECT_GHIM_FILE_MAX], len(text))
+                del text
+            except Exception:
+                pass
+        loaded.append(prepared)
+    return main_attachment_rendering.render_attachment_lists(
+        files, links, loaded, list_max=PROJECT_FILES_LIET_KE, allowed_suffixes=PROJECT_GHIM_DUOI,
+        file_max=PROJECT_GHIM_FILE_MAX, total_max=PROJECT_GHIM_TONG_MAX)
 
 
 def _session_block(session_id: str) -> str:
@@ -892,17 +794,7 @@ def _session_block(session_id: str) -> str:
     if not files and not links:
         return ""
     dong, da_nap = _liet_ke_tai_lieu(sess.get("brain") or "brain", files, links)
-    ra = ""
-    if dong:
-        ra += ("\n\n# === TÀI LIỆU & LINK NGƯỜI DÙNG GẮN VÀO CUỘC NÀY ===\n"
-               "Người dùng tự gắn tay ở khung \"Trong cuộc trò chuyện này\", nên đây là thứ họ "
-               "coi là quan trọng cho ĐÚNG cuộc này. Vẫn là DANH SÁCH chứ không phải nội dung: "
-               "mở file bằng tool đọc file khi cần, đừng đoán nội dung từ cái tên.\n"
-               + "\n".join(dong))
-    if da_nap:
-        ra += ("\n\n# === NỘI DUNG FILE ĐÃ GHIM TRONG CUỘC NÀY (nạp sẵn, không cần mở lại) ==="
-               + "".join(da_nap))
-    return ra
+    return main_attachment_rendering.render_session_assets(dong, da_nap)
 
 
 def _agent_assets_block(brain: str, meta: dict) -> str:
@@ -971,7 +863,7 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
         # 0.188.0: the person's own profile (every brain) BEFORE the brain's memory, which wins where they differ.
         base += memory_control.profile_block()
     if include_memory and mem.strip():
-        base += "\n\n# === BỘ NHỚ DÀI HẠN (nạp sẵn) ===\n" + _fit_memory_index(mem)
+        base += main_prompt_rendering.render_memory_block(mem, memory_cap=MEMORY_INDEX_MAX)
     if not memory_control.learning_enabled(_brain_memory_dir(brain)):
         base += memory_control.LEARNING_OFF_NOTE
     # Ngay sau bộ nhớ, TRƯỚC lớp agentic: hướng dẫn project là luật hành xử, phải đứng cùng
@@ -1007,26 +899,7 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
     ag, wf = _agents_dir(brain), _workflows_dir(brain)
     lp = Path(root) / "Javis" / "loops"
     sk = _skills_dir(brain)
-    base += (
-        "\n\n# === LỚP AGENTIC (vault đang làm việc) ===\n"
-        f"Vault root: {root}\n"
-        f"- AGENT: tạo/sửa tại `{ag}/<slug>.md`\n"
-        f"- WORKFLOW: tạo/sửa tại `{wf}/<slug>.md`\n"
-        f"- LOOP (nhiệm vụ lặp vô hạn): tạo/sửa tại `{lp}/<slug>.md`\n"
-        f"- SKILL: tạo/sửa tại `{sk}/<slug>/SKILL.md` (tự mirror sang .claude/skills cho Claude native)\n"
-        f"- FILE KHÁC (bài viết, báo cáo, nháp, dữ liệu): ghi VÀO TRONG vault root ở trên bằng đường "
-        f"dẫn TUYỆT ĐỐI `{root}/<thư mục>/<tên file>`. TUYỆT ĐỐI không ghi tương đối theo thư mục "
-        "làm việc và không ghi ra ngoài vault: file ngoài vault không hiện ở trang Tệp tin và mất "
-        "khi cập nhật. Trong câu trả lời, dẫn link bằng đường dẫn TƯƠNG ĐỐI so với vault root "
-        "(vd `bai-viet/bai-1.txt`), KHÔNG dùng giao thức `file://` và không mã hoá %20 dù harness "
-        "có dặn khác (khung chat và Telegram mở không được), và CHỈ dẫn link tới file đã ghi xong "
-        "thật. Khi đếm hay liệt kê "
-        "file (vd \"còn bao nhiêu bài chưa xong\"), liệt kê lại thư mục bằng tool ngay lúc đó, "
-        "đừng nhớ lại từ lượt trước.\n"
-        "Khi user yêu cầu tạo/sửa agent, workflow hoặc loop qua chat, ghi file .md đúng định dạng "
-        "(xem mục 'Tạo/sửa Agent & Workflow qua chat' và 'Điều phối' trong system prompt) bằng "
-        "ĐƯỜNG DẪN TUYỆT ĐỐI ở trên. Trang Agents/Workflows/Việc định kỳ sẽ tự nhận file mới."
-    )
+    base += main_prompt_rendering.render_agentic_paths(root, ag, wf, lp, sk)
     # Resonance (M2): chỉ brain đã bật mới có dòng này và mới thấy tool javis_goal. CLAUDE.md đã hết ngân sách
     # ký tự, và brain chưa bật thì không được dài thêm chữ nào.
     # Đường tìm tool khác nhau theo engine. Khi engine Claude dựng được server plugin in-process
@@ -1066,18 +939,13 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
     # Khối NGÔN NGỮ + đồng hồ đi CÙNG NHAU và đi CUỐI, sát chỗ model bắt đầu trả lời.
     # Ngôn ngữ đặt ở cuối vì luật càng gần chỗ sinh chữ thì model càng ít trôi; đồng hồ
     # đi kèm vì tên thứ trong tuần cũng phải theo ngôn ngữ đó.
-    base += "\n\n# === BÂY GIỜ ===\n" + context_compiler.dong_ho(lang=_lma)
-    base += lang_mod.khoi_ngon_ngu(_lq or lang_mod.LangDecision(_lma, "default", 1.0, True))
+    base += main_prompt_rendering.render_clock_language(
+        context_compiler.dong_ho(lang=_lma),
+        lang_mod.khoi_ngon_ngu(_lq or lang_mod.LangDecision(_lma, "default", 1.0, True)))
     try:
         # 1 dòng MỨC DÙNG để Javis TRẢ LỜI được khi user hỏi "token tiêu bao nhiêu" (chi tiết ở panel).
         _t = usage_store.summary().get("today", {}).get("total", {})
-        if _t.get("in") or _t.get("out"):
-            _c = f", ~${_t.get('cost', 0):.4f}" if _t.get("cost") else ""
-            base += (f"\n\n# === MỨC DÙNG HÔM NAY (Javis tự đo) ===\n"
-                     f"{_t.get('in', 0):,} token vào + {_t.get('out', 0):,} token ra qua "
-                     f"{_t.get('turns', 0)} lượt{_c}. Đây là token Javis TỰ ĐO, KHÔNG phải hạn mức gói "
-                     f"thuê bao (đa số nhà cung cấp không cho lấy hạn mức tài khoản qua API). Chi tiết "
-                     f"từng nhà cung cấp ở panel 'Mức dùng' trên dashboard.")
+        base += main_prompt_rendering.render_usage_block(_t)
     except Exception:
         pass
     return base
@@ -12955,35 +12823,14 @@ def _dong_lan_chay_gan_nhat(brain) -> str:
 
 
 def _javis_capability_summary(brain: str, skills=None) -> str:
-    """Bản LIVE gọn (capped) chèn vào system prompt: để engine nào cũng biết Javis có gì.
-    Skill nhiều -> chỉ đếm + nhóm (chi tiết ở Javis/index.md), tránh phình context.
-    skills: cây skill đã quét sẵn, xem _gather_capabilities."""
+    """Render the live summary from capabilities loaded by the production caller."""
     try:
-        c = _gather_capabilities(brain, skills)
+        capabilities = _gather_capabilities(brain, skills)
     except Exception:
         return ""
-    if not any(c.values()):
+    if not any(capabilities.values()):
         return ""
-    parts = ["\n\n# === NĂNG LỰC JAVIS HIỆN CÓ (đọc `Javis/index.md` để biết chi tiết + trigger) ==="]
-    if c["agents"]:
-        parts.append("Agents: " + ", ".join(a["name"] for a in c["agents"][:30]))
-    if c["skills"]:
-        groups = sorted({s["group"] for s in c["skills"] if s["enabled"]})
-        parts.append(f"Skills: {sum(1 for s in c['skills'] if s['enabled'])} kỹ năng (nhóm: {', '.join(groups[:12])})")
-    if c["workflows"]:
-        parts.append("Workflows: " + ", ".join(w["name"] for w in c["workflows"][:20] if w["status"] == "active"))
-    _lc = _dong_lan_chay_gan_nhat(brain)
-    if _lc:
-        parts.append(_lc)
-    if c["loops"]:
-        parts.append("Loops: " + ", ".join(f"{l['name']}({'bật' if l['enabled'] else 'tắt'})" for l in c["loops"][:20]))
-    live_plugins = [p for p in c.get("plugins", []) if p.get("loaded")]
-    if live_plugins:
-        tool_names = [t for p in live_plugins for t in p.get("tools", [])]
-        parts.append("Plugins đang chạy: " + ", ".join(p["name"] for p in live_plugins[:12])
-                     + (f" (tool: {', '.join(tool_names[:12])})" if tool_names else ""))
-    parts.append("Trước khi tạo năng lực mới, kiểm chỉ mục này để khỏi trùng.")
-    return "\n".join(parts)
+    return main_prompt_rendering.render_capability_summary(capabilities, _dong_lan_chay_gan_nhat(brain))
 
 
 def _skill_router_block(brain: str, root: str, skills=None) -> str:
@@ -13000,27 +12847,11 @@ def _skill_router_block(brain: str, root: str, skills=None) -> str:
              else skill_router.list_enabled_meta(root))
     if not metas:
         return ""
-    sk_dir = skill_router.skills_base(root, canonical=True)
-    lines = ["\n\n# === SKILL KHẢ DỤNG (router - dùng được trên MỌI engine) ==="]
-    hien, con_lai = skill_router.cat_theo_ngan_sach(
+    skills_dir = skill_router.skills_base(root, canonical=True)
+    visible, hidden_count = skill_router.cat_theo_ngan_sach(
         skill_router.xep_theo_uu_tien(metas, root))
-    for s in hien:
-        desc = (s.get("description") or "").replace("\n", " ")[:skill_router.SKILL_DESC_MAX]
-        lines.append(f"- {s['slug']} ({s['name']}): {desc}")
-    if con_lai > 0:
-        # Nói rõ CÁCH LẤY chứ không chỉ nói còn bao nhiêu: `javis_use_skill` nạp được theo
-        # slug kể cả skill không nằm trong danh sách trên, nên một skill bị cắt vẫn dùng được
-        # nếu model biết tên. Câu cũ chỉ trỏ sang một file mà model không đọc.
-        lines.append(f"…(+{con_lai} skill nữa chưa liệt kê ở đây - xem đủ danh sách trong "
-                     f"`Javis/index.md`, và nạp thẳng bằng `javis_use_skill(name=<slug>)` "
-                     f"nếu đã biết tên)")
-    lines.append(
-        "CÁCH DÙNG: khi yêu cầu của user KHỚP mô tả 1 skill ở trên, hãy NẠP skill đó rồi LÀM THEO - "
-        "gọi tool `javis_use_skill(name=<slug>)` nếu engine có tool này; nếu không, mở file "
-        f"`{sk_dir}/<slug>/SKILL.md` bằng công cụ đọc file rồi tuân theo hướng dẫn trong đó. "
-        "Chỉ nạp khi thực sự khớp, không nạp tràn lan."
-    )
-    return "\n".join(lines)
+    return main_prompt_rendering.render_skill_router(
+        visible, skills_dir=skills_dir, hidden_count=hidden_count, description_max=skill_router.SKILL_DESC_MAX)
 
 
 @app.get("/javis/index")
@@ -24559,6 +24390,11 @@ async def _warm_mcp_hub():
 async def _shutdown_mcp_pool():
     """Đóng các session MCP sống lâu (stdio subprocess, httpx client) khi server tắt."""
     try:
+        await _shutdown_improvement_trials()
+    except Exception:
+        # The service has drained workers before reporting unsettled storage.
+        print("[improvement shutdown] trial_shutdown_incomplete", file=__import__('sys').stderr)
+    try:
         await tasks_feature.shutdown()
     except Exception as e:
         print(f"[kanban shutdown] {e}", file=__import__('sys').stderr)
@@ -26786,4 +26622,71 @@ improvement_api.register(app, improvement_api.ImprovementApiDeps(
     resolve_brain=lambda value: improvement_api.strict_brain(value,
         default_root=Path(BRAINS_DIR) / "Brain Default", brains_root=Path(BRAINS_DIR)),
     agent_key=lambda root, slug: _agent_jobs_key(root, slug, register=True),
+))
+
+
+# Explicit owner trials are lazy; importing routes does not start or recover work.
+import improvement_trial_api  # noqa: E402
+import improvement_trial_service  # noqa: E402
+
+_IMPROVEMENT_TRIAL_SERVICE = None
+_IMPROVEMENT_TRIAL_SHUTTING_DOWN = False
+
+
+def _improvement_trial_host(source_selections=None):
+    with _LAZY_LOCK:
+        if _IMPROVEMENT_TRIAL_SHUTTING_DOWN:
+            raise RuntimeError("trial_service_closed")
+        return improvement_trial_service.dashboard_host(__import__(__name__), _improvement_write_store(),
+                                                       source_selections=source_selections)
+
+
+def _improvement_trial_service():
+    global _IMPROVEMENT_TRIAL_SERVICE
+    with _LAZY_LOCK:
+        if _IMPROVEMENT_TRIAL_SHUTTING_DOWN:
+            raise RuntimeError("trial_service_closed")
+        if _IMPROVEMENT_TRIAL_SERVICE is None:
+            _IMPROVEMENT_TRIAL_SERVICE = improvement_trial_service.OwnerTrialService(_improvement_trial_host())
+        return _IMPROVEMENT_TRIAL_SERVICE
+
+
+def _improvement_trial_active_service():
+    with _LAZY_LOCK:
+        return _IMPROVEMENT_TRIAL_SERVICE
+
+
+async def _shutdown_improvement_trials():
+    from improvement_trial_runner import _drain
+
+    def mark_closing():
+        global _IMPROVEMENT_TRIAL_SHUTTING_DOWN
+        # A worker may still hold this lock while constructing dependencies.
+        # Never wait for that filesystem/store lifetime on the server loop.
+        with _LAZY_LOCK:
+            _IMPROVEMENT_TRIAL_SHUTTING_DOWN = True
+            return _IMPROVEMENT_TRIAL_SERVICE
+
+    async def finish():
+        service = await asyncio.to_thread(mark_closing)
+        if service is not None:
+            await service.close()
+
+    closing = asyncio.create_task(finish())
+    values, cancelled = await _drain(asyncio.gather(closing, return_exceptions=True))
+    if cancelled is not None:
+        raise cancelled
+    if isinstance(values[0], BaseException):
+        raise values[0]
+
+
+improvement_trial_api.register(app, improvement_trial_api.TrialApiDeps(
+    read_store=_improvement_read_store,
+    write_store=_improvement_write_store,
+    resolve_brain=lambda value: improvement_api.strict_brain(value,
+        default_root=Path(BRAINS_DIR) / "Brain Default", brains_root=Path(BRAINS_DIR)),
+    owner_session=_doi_phien_that,
+    capture_host=_improvement_trial_host,
+    service=_improvement_trial_service,
+    active_service=_improvement_trial_active_service,
 ))
