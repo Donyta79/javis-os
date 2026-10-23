@@ -183,6 +183,9 @@ class TrialAdmission:
             replay = self._replay(connection, principal, public)
             if replay is not None:
                 return replay
+            from improvement_experiment_lineage import require_experiment_version
+            require_experiment_version(connection, brain, {"version": 1, "case_set_id": public["case_set_id"],
+                "pins": {"experiment_id": public["experiment_id"]}})
             prepared = self._prepare(connection, principal, public)
             plan, request, split, registry = prepared
             self._available(connection, brain, public, plan, request)

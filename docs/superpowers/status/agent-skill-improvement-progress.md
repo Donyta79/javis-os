@@ -17,7 +17,130 @@
   Publication39856024117 succeeded on the actual main merge. No production
   deployment, restart or activation occurred. Earlier reservations, failures and
   checkpoints below remain historical and do not supersede this state.
-- Current engineering continuation is M2A below, release0.292.0.
+- M2A engineering published: PR799 straight squash merged
+  `cbef2f464932e533825512e8e11c2299e6b3bf4f` as0.292.0. Final-head Linux
+  CI39862650038 passed on d4703f34; actual merged tree is identical.
+  Publication39865749261 succeeded. M1 main CI39856024098 also passed.
+- Current engineering continuation is M2B below. Earlier pending/failure
+  checkpoints remain historical; complete M2/business/rollout gates remain open.
+
+## M2B engineering continuation
+
+- Reuse the clean managed M2 worktree, branch `codex/agent-skill-improvement-m2b`,
+  from actual published A main cbef2f46/0.292.0. Fresh main/open-PR inspection
+  found no open reservations;0.293.0 is the next free release.
+- Plan: `../plans/2026-10-23-agent-skill-improvement-m2b.md`, self-reviewed
+  against actual source. Six units cover schema5/experiment ownership, real A
+  arms/full counterbalanced matrix, closed request-v2/baseline execution,
+  both-variant qualification preflight, immutable complete-pair reports and
+  owner cancellation/recovery. Task1 now implements schema5, proposed metadata
+  and owner CAS/block/resume/stop fences; source/runtime execution remains gated.
+- Read-only B–F audits identified exact case-set association, fresh proposal
+  lineage after context changes, chosen active edit authority, native delivery
+  limits and missing preparation/navigation. Those boundaries are in the plan;
+  actual effort/internal semantic use stay unknown where unobservable.
+- Reserved VERSION/both changelogs in a2f1b074 and attached draft PR800 before
+  implementation: https://github.com/blogminhquy/javis-os/pull/800.
+  Changed-candidate execution, compose, real activation and live canary remain
+  unavailable until their actual prerequisites and owner scope grants exist.
+- Task1 tests preserve actual A encrypted authoring and M1 context/case/contract/
+  qualification/trial/ledger history. Migration and actual released-A-reader
+  checks pass; metadata creation/CAS/revocation, SQL NULL constraints and active
+  capacity retention are covered. Interim independent Task1 review found no
+  Important issues and independently checked five migration/reader/CAS/SQL cases
+  plus a distinct valid context competing in proposed/blocked/stopping phases.
+  Root final unit regression7/7 GREEN84s (new experiment suite19 tests GREEN29s).
+  Exact Task1 checkpoint5e5ed821 Linux CI39868224361 passed both jobs.
+  This is not the final whole-B review; Tasks2–6 and final CI/publication remain.
+- Task2 host planning now derives definitions from actual associated sources,
+  verifies A proposal bytes/provenance and pins one chosen active edit authority.
+  Whole compact matrices counterbalance both variants; each challenger has a
+  distinct fresh baseline comparison. KEEP_BASE seals and enters stopping in one
+  transaction; all new A edit writes honor the seal while history/revoke survive.
+  Candidate selection remains closed until Task5 immutable report verification.
+  Root comparison suite24 tests GREEN48s and related8/8 regression GREEN157s.
+  Independent review's final protected-context read races were reproduced RED,
+  fixed with final full observations and independently rechecked; no open
+  Important scoped findings. Tasks3–6 and whole-B acceptance remain open.
+  Exact Task2 checkpoint2e9d2db8 Linux CI39869374705 passed both jobs.
+- Task3 now carries closed v2 comparison lineage through actual preflight,
+  atomic trial/call/link, baseline Runner/workspace, usage and immutable results.
+  V1 history/replay survives; experiment-owned new work cannot downgrade to v1.
+  Current fences refresh after slow reads; stopping blocks late checker results.
+  Candidate/final execution remains closed before decryption/probe/reservation.
+  Final five new-unit scripts34 tests GREEN79s; related Host24 GREEN15s after
+  expected frozen-revalidation count update; old M1 E2E/Runner/light-startup3/3
+  GREEN332s. Scoped independent source review has no open Important findings
+  after reproduced downgrade/post-I/O races were fixed and rechecked.
+- Public-source compilation dominated capture CPU. The bounded exact-byte code
+  cache keeps fresh stable reads and every live-function/path check. Independent
+  cached/uncached full captures match; revalidation5.352->0.699s on this machine.
+  Cache6 tests pass independently. Root cache/Dashboard/old E2E3/3 GREEN75s,
+  E2E288->40s. This is measured technical overhead reduction, not model/business
+  effectiveness. No real native/model/auth query or four-file profile change.
+  Tasks4–6 and final whole-B review, exact-head CI/merge/publication remain open.
+- Task4 denial-boundary checkpoint is PARTIAL: lower qualification ownership
+  follows frozen experiment/set/hash and shared qualification fingerprints even
+  after renaming/reclassification. Fresh bare-pin reserve/consume and legacy
+  execution reject; historical replay and global claims survive. Original5 tests
+  RED->GREEN; renamed owner early-preflight RED->GREEN. Expanded14 qualification
+  tests GREEN46s, including verified actual frozen final lineage for both
+  variants/splits with zero allocations, concurrent aliases and actual pre-B
+  consumption replay. Independent scoped review found no Important issue and
+  passed four focused checks15.65s. Related seven-script regression GREEN190s
+  (Cases, Trials, M1 Admission/transactions and v2 Lineage/Admission/Qualification).
+  No unused positive v2 qualification helper or readiness flag was added. Positive
+  final allocation/linked consumption and drift/resume remain C+D dependencies;
+  Task4 and complete M2 remain open. Task5 reports can proceed independently.
+- Task5 report component committedc860d8c0: pure complete-case arithmetic,
+  exact integer multiple-test correction, critical/regression preservation and
+  explicit technical/unverified evidence; concrete encrypted immutable reports
+  enumerate expected cells and pin exact result IDs/hashes. Pure19 tests GREEN.
+  Actual synthetic Runner/Fernet/ledger tests preserve report refs across genuine
+  product reevaluation and reject pointer races. Missing artifact/call marker,
+  late source drift during policy hashing and corrupt Fernet results reproduced
+  RED->GREEN. Scoped independent review found no remaining Important issue;
+  final component regression5/5 scripts GREEN178s, including31 new component
+  tests. Selection now pins exact complete CURRENT tuning evidence for every
+  declared arm; the chosen arm must support improvement. Publication ordering
+  uses immutable event IDs, handling clock rollback and deduplicated report
+  republication. Scoped premature-second-arm sealing finding and root chronology
+  findings reproduced RED->GREEN. Selection11 tests GREEN39.9s; final seven-script
+  regression GREEN264s. Candidate selection opens only that metadata seal; final
+  execution/allocation remains C+D gated. Task6 and whole-B acceptance remain open.
+
+- Task6 engineering checkpoint adds twelve owner-only routes, cold report/history
+  reads, strict closed bodies and lazy main wiring over the SAME OwnerTrialService
+  dispatcher. Stop fences retain capacity through pending admission/handoff,
+  terminal-row live workers, actual checker drainage and verified cleanup under
+  the real brain execution lock. All recorded linked attempts participate in the
+  final CAS. Cleaned journals are retained and validated as replay protection;
+  invalid journals cannot be relabeled clean by legacy cancellation cleanup.
+  Recovery never dispatches and works while off/revoked; owner resume events and
+  metadata transitions commit atomically. Candidate/final execution stays closed.
+  Root service13 GREEN46.655s; API5 GREEN17.123s; actual v2 Runner lifetime3
+  GREEN20.815s (synthetic native packets, real storage/workspaces/usage); five-script
+  service/API/cleanup/Tasks/Sandbox regression GREEN83s. Actual-main/old-main/light
+  startup3/3 GREEN30s. A separate Python process proves the actual OS brain lock;
+  simultaneous admissions preserve one cell/trial/call. Route snapshot now607
+  entries, with the established595-entry prefix unchanged and12 appended routes.
+  Current native profile ffe27adc5caba5249b95358245d874e99f1d59ffc9ee49684d9f0e085198e643
+  passes exact CLI2.1.308/SDK0.2.116 dummy-HOME/localhost qualification5/5 in14.845s.
+  The old real smoke remains on its original06e75 profile with aggregate unknown.
+  Full required regressions, fresh whole-B review, final exact-head Linux CI and
+  integration/publication remain pending; Task6 and full M2 are not complete.
+
+- Fresh whole-B review of cbef2f46..69a91832 found one Important recovery-scope
+  issue: brain-wide trial recovery could touch an unrelated old trial or let its
+  damaged journal block an otherwise empty stopping experiment. Root reproduced
+  it, added three behavioral RED cases, then scoped both expired settlement and
+  filesystem cleanup to actual immutable experiment links. The separate existing
+  brain-wide owner-trial recovery remains unchanged. New scope suite3 GREEN13.544s;
+  the independent original diagnostic now closes the experiment and leaves the
+  unrelated journal intact. Reviewer28 focused tests passed and no other Important
+  issue was identified. Fixed-source regressions, independent recheck and new
+  exact-head Linux CI remain required before integration. The initial broad63
+  regression spans the narrow fix and cannot serve as exact-final-head evidence.
 
 ## M2A engineering continuation
 
@@ -76,7 +199,7 @@
 |---|---|---|---|
 | M0 | Complete: PR #794 merged09903315, CI39793439501 and publication39797072172 passed;0.287.0 | Not applicable to foundation | Metadata only; no live activation or production restart |
 | M1 | Complete engineering: PR795 merged9dd7a9f9, CI39852883192 and publication39856024117 succeeded;0.291.0 | One historical real-engine synthetic baseline; aggregate unknown; no business pilot | Trial/activation flags false; not enabled |
-| M2 | M2A Tasks1–4 implemented and independently reviewed; final CI/integration and B–F open | No skill feasibility yet | Not enabled |
+| M2 | M2A published0.292.0: PR799 mergedcbef2f46, CI39862650038/publication39865749261 passed; B starting, C–F open | No skill feasibility yet | Not enabled |
 | M3 | Pending | No qualification or live canary | Not enabled |
 | M4 | Pending | No adapter/routing pilot | Not enabled |
 | M5 | Pending | No agent pilot | Not enabled |
