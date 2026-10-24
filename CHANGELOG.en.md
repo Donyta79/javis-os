@@ -8,6 +8,12 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.300.0] - 2026-10-24
+### Fixed
+- **One Hostinger install link works on both Ubuntu 24 and Ubuntu 26.** A plain Ubuntu 26 image has no Traefik, so pasting the link used to give a running Javis whose domain never got HTTPS. The link now carries an HTTPS gateway (Caddy) that turns itself on when there is no Traefik and issues the certificate for `DOMAIN_NAME`; on a VPS with Traefik it stays out of the way.
+### Improved
+- The install docs say it plainly: Traefik only provides HTTPS, updates are done by the bundled Watchtower, so the **Update now** button works the same on every Ubuntu release.
+
 ## [0.298.0] - 2026-10-23
 ### Fixed
 - **A voice picked on one device now applies everywhere.** The reading voice used to live only in the open browser, so picking a female voice on the laptop left the phone on its old voice however many times you saved. It is now saved in Javis, so every device and the voice notes sent through Telegram and Zalo use it.
