@@ -6,6 +6,12 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.306.0] - 2026-10-24
+### Cải thiện
+- **Cài trên Windows hoặc macOS là Javis tự chạy cùng máy và tự mở trình duyệt.** Cài xong dashboard mở luôn, và từ đó mỗi lần đăng nhập máy Javis tự chạy rồi tự mở dashboard, không phải bấm gì. Trước đây phải tự bật tính năng này, và khi bật thì Javis chỉ chạy ngầm, mở máy lên không thấy đâu.
+- Không muốn tự mở: trên Windows bấm Tắt ở thẻ Khởi động cùng máy (trang Cài đặt) hoặc chạy `javis-autostart.bat uninstall`; trên macOS chạy `./bin/javis-autostart.sh uninstall`.
+- Máy Windows đã bật tự khởi động từ trước vẫn chạy ngầm như cũ; bấm Tắt rồi Bật lại một lần là có thêm phần tự mở dashboard.
+
 ## [0.304.0] - 2026-10-24
 ### Sửa lỗi
 - **VPS Ubuntu 26 trên Hostinger có HTTPS mà không cần điền gì, lần này chạy thật.** Bản 0.302.0 lấy nhầm tên: cổng HTTPS xin chứng chỉ cho một link, còn Javis lại kiểm tra link khác, nên bấm Open vẫn ở lại trang IP và không có HTTPS. Giờ cổng HTTPS phục vụ cả `javis.srvXXXX.hstgr.cloud` lẫn `srvXXXX.hstgr.cloud`, và Javis thử đúng hai link đó.
